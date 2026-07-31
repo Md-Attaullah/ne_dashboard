@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nusrat Enterprises — Ledger</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root{
+    --indigo:#1c2b4a;
+    --indigo-deep:#0f1830;
+    --canvas:#efe8d8;
+    --turmeric:#d99a2b;
+    --madder:#a13d3d;
+    --thread:#c8bda0;
+    --ink:#2a2620;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--canvas);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(28,43,74,0.06) 1px, transparent 0);
+    background-size:18px 18px;
+    color:var(--ink);
+    font-family: 'Courier New', ui-monospace, monospace;
+    min-height:100vh;
+  }
+  @font-face{
+    font-family:'stamp';
+    src:local('Arial Black');
+  }
+  .display{
+    font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
+    letter-spacing:-0.02em;
+  }
+  header{
+    background:var(--indigo);
+    color:var(--canvas);
+    padding:28px 24px 22px;
+    position:relative;
+    border-bottom:6px solid var(--turmeric);
+  }
+  header::after{
+    content:'';
+    position:absolute; left:0; right:0; bottom:-6px; height:6px;
+    background:repeating-linear-gradient(90deg, var(--madder) 0 10px, var(--turmeric) 10px 20px);
+    opacity:0.9;
+  }
+  .brand-row{
+    display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;
+    max-width:1180px; margin:0 auto;
+  }
+  .brand-title{
+    font-size:clamp(28px,4vw,44px);
+    font-weight:900;
+    text-transform:uppercase;
+  }
+  .brand-sub{
+    font-size:12px; letter-spacing:0.14em; text-transform:uppercase; opacity:0.75;
+  }
+  .stitch-line{
+    max-width:1180px; margin:14px auto 0; padding-top:12px;
+    border-top:1px dashed rgba(239,232,216,0.35);
+    display:flex; gap:18px; flex-wrap:wrap; align-items:center; font-size:12px; opacity:0.85;
+  }
+  .container{max-width:1180px; margin:0 auto; padding:22px 24px 60px;}
+
+  .sheet-panel{
+    background:#fff; border:1px solid var(--thread); border-radius:2px;
+    padding:14px 16px; margin-bottom:22px;
+    display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+    box-shadow: 2px 2px 0 rgba(28,43,74,0.06);
+  }
+  .sheet-panel input{
+    flex:1; min-width:220px; padding:8px 10px; border:1px solid var(--thread);
+    font-family:inherit; font-size:13px; background:var(--canvas);
+  }
+  .sheet-panel button{
+    background:var(--indigo); color:var(--canvas); border:none; padding:9px 16px;
+    font-family:inherit; font-weight:700; letter-spacing:0.04em; cursor:pointer;
+    text-transform:uppercase; font-size:12px;
+  }
+  .sheet-panel button:hover{background:var(--indigo-deep);}
+  .sheet-note{width:100%; font-size:11.5px; color:#6b6250; line-height:1.5;}
+  #status{font-size:12px; font-weight:700;}
+  .status-ok{color:#3a6b3a;}
+  .status-err{color:var(--madder);}
+  .status-wait{color:#6b6250;}
+
+  .tags-row{
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:16px; margin-bottom:26px;
+  }
+  .tag{
+    background:#fff; position:relative; border:1px solid var(--thread);
+    padding:18px 16px 16px 34px; box-shadow:2px 2px 0 rgba(28,43,74,0.08);
+  }
+  .tag::before{
+    content:''; position:absolute; left:14px; top:16px; width:9px; height:9px;
+    border-radius:50%; border:2px solid var(--indigo); background:var(--canvas);
+  }
+  .tag::after{
+    content:''; position:absolute; left:14px; top:25px; bottom:16px; width:0;
+    border-left:1px dashed var(--thread);
+  }
+  .tag-label{font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:#6b6250;}
+  .tag-value{font-size:26px; font-weight:900; font-family:'Arial Black',sans-serif; color:var(--indigo); margin-top:4px;}
+  .tag-value.accent{color:var(--madder);}
+
+  .section-title{
+    display:flex; align-items:center; gap:10px; margin:34px 0 14px;
+  }
+  .section-title .num{
+    background:var(--indigo); color:var(--canvas); font-weight:900; font-size:13px;
+    padding:3px 9px;
+  }
+  .section-title h2{
+    font-family:'Arial Black',sans-serif; font-size:16px; text-transform:uppercase;
+    letter-spacing:0.04em; margin:0;
+  }
+  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:18px;}
+  .grid-2b{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  @media (max-width:820px){ .grid-2, .grid-2b{grid-template-columns:1fr;} }
+
+  .panel{
+    background:#fff; border:1px solid var(--thread); padding:18px;
+    box-shadow:2px 2px 0 rgba(28,43,74,0.06);
+  }
+  .panel h3{
+    margin:0 0 12px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#6b6250;
+  }
+  canvas{max-height:280px;}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th,td{text-align:left; padding:7px 6px; border-bottom:1px solid var(--canvas);}
+  th{text-transform:uppercase; font-size:10.5px; letter-spacing:0.06em; color:#6b6250; border-bottom:2px solid var(--thread);}
+  tr:hover td{background:var(--canvas);}
+  .flag-cell{white-space:nowrap;}
+  .empty-note{color:#8a8069; font-style:italic; font-size:13px; padding:20px 0; text-align:center;}
+
+  footer{
+    text-align:center; font-size:11px; color:#8a8069; padding:20px 0 40px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-row">
+    <div>
+      <div class="brand-title">Nusrat Enterprises</div>
+      <div class="brand-sub">Men's &amp; Kids' Wear · Wholesale + Retail · Bhubaneswar</div>
+    </div>
+    <div class="brand-sub" style="text-align:right">NE Street Wear<br>Sales Ledger</div>
+  </div>
+  <div class="stitch-line" id="dateRange">Loading period…</div>
+</header>
+
+<div class="container">
+
+  <div class="sheet-panel">
+    <input id="sheetId" type="text" value="1R7yvrGlo-c4W_ywKSWtKA34PJ_Omwby-gJGlzp_EycY" placeholder="Google Sheet ID">
+    <button id="loadBtn" onclick="loadAll()">Refresh Ledger</button>
+    <span id="status" class="status-wait">Not loaded yet</span>
+    <div class="sheet-note">
+      Data is pulled live from Google Sheets (no server, no key). The sheet must be shared as
+      <b>"Anyone with the link → Viewer"</b> — otherwise loading will fail.
+      Paste a different Sheet ID above to point this dashboard at another workbook.
+    </div>
+  </div>
+
+  <div class="tags-row" id="kpiRow">
+    <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">—</div></div>
+    <div class="tag"><div class="tag-label">Invoices Billed</div><div class="tag-value" id="kpiInvoices">—</div></div>
+    <div class="tag"><div class="tag-label">Customers on File</div><div class="tag-value" id="kpiCustomers">—</div></div>
+    <div class="tag"><div class="tag-label">Avg. Bill Value</div><div class="tag-value accent" id="kpiAvg">—</div></div>
+  </div>
+
+  <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
+  <div class="grid-2">
+    <div class="panel"><h3>Monthly Sales (₹)</h3><canvas id="monthChart"></canvas></div>
+    <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
+  </div>
+
+  <div class="section-title"><span class="num">02</span><h2>Product Mix</h2></div>
+  <div class="grid-2b">
+    <div class="panel"><h3>Top Item Types by Revenue</h3><canvas id="itemChart"></canvas></div>
+    <div class="panel"><h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas></div>
+  </div>
+
+  <div class="section-title"><span class="num">03</span><h2>Customer Retention</h2></div>
+  <div class="grid-2b">
+    <div class="panel"><h3>Retention Flags (Wholesale)</h3><canvas id="flagWholesaleChart"></canvas></div>
+    <div class="panel"><h3>Retention Flags (Retail)</h3><canvas id="flagRetailChart"></canvas></div>
+  </div>
+
+  <div class="section-title"><span class="num">04</span><h2>Top Customers by Lifetime Sale</h2></div>
+  <div class="panel">
+    <table id="topCustTable">
+      <thead><tr><th>Name</th><th>Type</th><th>Lifetime Sale (₹)</th><th>Last Purchase</th><th>Gap (days)</th><th>Flag</th></tr></thead>
+      <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+    </table>
+  </div>
+
+  <footer>Nusrat Enterprises &amp; NE Street Wear — live sheet-powered ledger</footer>
+</div>
+
+<script>
+const charts = {};
+function fmtINR(n){
+  if(n===null||n===undefined||isNaN(n)) return '—';
+  return '₹' + Math.round(n).toLocaleString('en-IN');
+}
+
+// Google's gviz CSV endpoint doesn't send CORS headers, so fetch() always fails
+// cross-origin. JSONP (a <script> tag) is not subject to CORS, so we use that instead.
+function fetchSheet(sheetId, sheetName){
+  return new Promise((resolve, reject) => {
+    const cbName = 'gsCallback_' + Math.random().toString(36).slice(2);
+    const timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new Error(`Timed out loading "${sheetName}". Check the Sheet ID and that it's shared as "Anyone with the link".`));
+    }, 15000);
+
+    function cleanup(){
+      clearTimeout(timeoutId);
+      delete window[cbName];
+      if(script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(response){
+      cleanup();
+      try{
+        if(response.status === 'error'){
+          const msg = (response.errors && response.errors[0] && response.errors[0].detailed_message) || `Tab "${sheetName}" not found.`;
+          reject(new Error(msg));
+          return;
+        }
+        const cols = response.table.cols.map(c => c.label || c.id || '');
+        const rows = response.table.rows.map(row => {
+          const obj = {};
+          cols.forEach((label, i) => {
+            const cell = row.c && row.c[i];
+            if(!cell){ obj[label] = ''; return; }
+            obj[label] = (cell.f !== undefined && cell.f !== null) ? cell.f : (cell.v !== undefined && cell.v !== null ? cell.v : '');
+          });
+          return obj;
+        }).filter(r => Object.values(r).some(v => v !== ''));
+        resolve(rows);
+      } catch(e){ reject(e); }
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json;responseHandler:${cbName}&sheet=${encodeURIComponent(sheetName)}`;
+    script.onerror = () => {
+      cleanup();
+      reject(new Error(`Could not load "${sheetName}". Check the Sheet ID and that sharing is set to "Anyone with the link".`));
+    };
+    document.body.appendChild(script);
+  });
+}
+
+function num(v){
+  if(v===undefined||v===null||v==='') return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+
+const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+
+async function loadAll(){
+  const sheetId = document.getElementById('sheetId').value.trim();
+  const statusEl = document.getElementById('status');
+  statusEl.textContent = 'Fetching…';
+  statusEl.className = 'status-wait';
+
+  try{
+    const [invoices, items, wholesale, retail] = await Promise.all([
+      fetchSheet(sheetId, 'Clean_Invoices'),
+      fetchSheet(sheetId, 'Clean_Items'),
+      fetchSheet(sheetId, 'Wholesale_list'),
+      fetchSheet(sheetId, 'Retail_list'),
+    ]);
+
+    renderKPIs(invoices, wholesale, retail);
+    renderMonthChart(invoices);
+    renderTypeChart(invoices);
+    renderItemChart(items);
+    renderPaymentChart(invoices);
+    renderFlagChart('flagWholesaleChart', wholesale);
+    renderFlagChart('flagRetailChart', retail);
+    renderTopCustomers(wholesale, retail);
+    renderDateRange(invoices);
+
+    statusEl.textContent = `Loaded ✓ (${invoices.length} invoices)`;
+    statusEl.className = 'status-ok';
+  } catch(err){
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.className = 'status-err';
+    console.error(err);
+  }
+}
+
+function renderDateRange(invoices){
+  const dates = invoices.map(r => r['Date']).filter(Boolean);
+  const el = document.getElementById('dateRange');
+  if(!dates.length){ el.textContent = 'No invoice dates found'; return; }
+  el.innerHTML = `<span>📋 Ledger period: ${dates[0]} — ${dates[dates.length-1]}</span><span>·</span><span>${invoices.length} invoices on record</span>`;
+}
+
+function renderKPIs(invoices, wholesale, retail){
+  const totalSales = invoices.reduce((s,r) => s + num(r['Paid']), 0);
+  const invoiceCount = new Set(invoices.map(r => r['Invoice'])).size || invoices.length;
+  const custCount = wholesale.length + retail.length;
+  const avg = invoiceCount ? totalSales / invoiceCount : 0;
+
+  document.getElementById('kpiSales').textContent = fmtINR(totalSales);
+  document.getElementById('kpiInvoices').textContent = invoiceCount.toLocaleString('en-IN');
+  document.getElementById('kpiCustomers').textContent = custCount.toLocaleString('en-IN');
+  document.getElementById('kpiAvg').textContent = fmtINR(avg);
+}
+
+function renderMonthChart(invoices){
+  const byMonth = {};
+  invoices.forEach(r => {
+    const m = r['Month'] || 'Unknown';
+    byMonth[m] = (byMonth[m]||0) + num(r['Paid']);
+  });
+  const labels = Object.keys(byMonth).sort((a,b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+  const data = labels.map(l => byMonth[l]);
+
+  destroy('monthChart');
+  charts.monthChart = new Chart(document.getElementById('monthChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Sales (₹)', data, backgroundColor:'#1c2b4a' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+  });
+}
+
+function renderTypeChart(invoices){
+  const byType = {};
+  invoices.forEach(r => {
+    const t = r['Sale Type'] || 'Unknown';
+    byType[t] = (byType[t]||0) + num(r['Paid']);
+  });
+  destroy('typeChart');
+  charts.typeChart = new Chart(document.getElementById('typeChart'), {
+    type:'doughnut',
+    data:{ labels:Object.keys(byType), datasets:[{ data:Object.values(byType), backgroundColor:['#a13d3d','#d99a2b','#1c2b4a'] }] },
+    options:{ responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+function renderItemChart(items){
+  const byItem = {};
+  items.forEach(r => {
+    const t = r['Type'] || 'Unknown';
+    byItem[t] = (byItem[t]||0) + num(r['Amount']);
+  });
+  const sorted = Object.entries(byItem).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  destroy('itemChart');
+  charts.itemChart = new Chart(document.getElementById('itemChart'), {
+    type:'bar',
+    data:{ labels: sorted.map(x=>x[0]), datasets:[{ label:'Revenue (₹)', data: sorted.map(x=>x[1]), backgroundColor:'#d99a2b' }] },
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}} }
+  });
+}
+
+function renderPaymentChart(invoices){
+  const byMode = {};
+  invoices.forEach(r => {
+    const m = r['Payment Mode'] || 'Unknown';
+    byMode[m] = (byMode[m]||0) + num(r['Paid']);
+  });
+  destroy('paymentChart');
+  charts.paymentChart = new Chart(document.getElementById('paymentChart'), {
+    type:'pie',
+    data:{ labels:Object.keys(byMode), datasets:[{ data:Object.values(byMode), backgroundColor:['#1c2b4a','#a13d3d','#d99a2b','#6b6250','#8a9a8a'] }] },
+    options:{ responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+function renderFlagChart(canvasId, list){
+  const byFlag = {};
+  list.forEach(r => {
+    const f = (r['Flag']||'Unknown').replace(/^[^\w]*/, '').trim() || 'Unknown';
+    byFlag[f] = (byFlag[f]||0) + 1;
+  });
+  destroy(canvasId);
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type:'bar',
+    data:{ labels:Object.keys(byFlag), datasets:[{ label:'Customers', data:Object.values(byFlag), backgroundColor:'#a13d3d' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ precision:0 } } } }
+  });
+}
+
+function renderTopCustomers(wholesale, retail){
+  const all = [
+    ...wholesale.map(r => ({...r, __type:'Wholesale'})),
+    ...retail.map(r => ({...r, __type:'Retail'})),
+  ];
+  all.sort((a,b) => num(b['Sale']) - num(a['Sale']));
+  const top = all.slice(0,15);
+  const tbody = document.querySelector('#topCustTable tbody');
+  if(!top.length){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No customer data found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = top.map(r => `
+    <tr>
+      <td>${r['Name'] || '—'}</td>
+      <td>${r.__type}</td>
+      <td>${fmtINR(num(r['Sale']))}</td>
+      <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
+      <td>${r['Gap'] || '—'}</td>
+      <td class="flag-cell">${r['Flag'] || '—'}</td>
+    </tr>
+  `).join('');
+}
+
+// Auto-load on first visit
+loadAll();
+</script>
+</body>
+</html>
