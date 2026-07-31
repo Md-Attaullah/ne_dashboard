@@ -3,146 +3,156 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nusrat Enterprises — Ledger</title>
+<title>Nusrat Enterprises — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
   :root{
-    --indigo:#1c2b4a;
-    --indigo-deep:#0f1830;
-    --canvas:#efe8d8;
-    --turmeric:#d99a2b;
-    --madder:#a13d3d;
-    --thread:#c8bda0;
-    --ink:#2a2620;
+    --bg:#ffffff;
+    --bg-soft:#f6f7f9;
+    --border:#e4e7ec;
+    --ink:#14181f;
+    --ink-soft:#67707d;
+    --navy:#1f3a5f;
+    --navy-deep:#152944;
+    --amber:#c1652f;
+    --slate:#5b7290;
+    --green:#2f8f5b;
+    --red:#c1432f;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
-    background:var(--canvas);
-    background-image:
-      radial-gradient(circle at 1px 1px, rgba(28,43,74,0.06) 1px, transparent 0);
-    background-size:18px 18px;
+    background:var(--bg);
     color:var(--ink);
-    font-family: 'Courier New', ui-monospace, monospace;
+    font-family:'Inter', system-ui, -apple-system, sans-serif;
     min-height:100vh;
+    -webkit-font-smoothing:antialiased;
   }
-  @font-face{
-    font-family:'stamp';
-    src:local('Arial Black');
-  }
-  .display{
-    font-family: 'Arial Black', 'Helvetica Neue', sans-serif;
-    letter-spacing:-0.02em;
-  }
+  .mono{font-family:'IBM Plex Mono', ui-monospace, monospace;}
+
   header{
-    background:var(--indigo);
-    color:var(--canvas);
-    padding:28px 24px 22px;
-    position:relative;
-    border-bottom:6px solid var(--turmeric);
-  }
-  header::after{
-    content:'';
-    position:absolute; left:0; right:0; bottom:-6px; height:6px;
-    background:repeating-linear-gradient(90deg, var(--madder) 0 10px, var(--turmeric) 10px 20px);
-    opacity:0.9;
+    background:var(--bg);
+    border-bottom:1px solid var(--border);
+    padding:20px 24px;
   }
   .brand-row{
     display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;
     max-width:1180px; margin:0 auto;
   }
   .brand-title{
-    font-size:clamp(28px,4vw,44px);
-    font-weight:900;
-    text-transform:uppercase;
+    font-size:clamp(20px,3vw,26px);
+    font-weight:800;
+    letter-spacing:-0.01em;
+    color:var(--ink);
   }
   .brand-sub{
-    font-size:12px; letter-spacing:0.14em; text-transform:uppercase; opacity:0.75;
+    font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-top:2px;
   }
   .stitch-line{
-    max-width:1180px; margin:14px auto 0; padding-top:12px;
-    border-top:1px dashed rgba(239,232,216,0.35);
-    display:flex; gap:18px; flex-wrap:wrap; align-items:center; font-size:12px; opacity:0.85;
+    max-width:1180px; margin:12px auto 0; padding-top:12px;
+    border-top:1px solid var(--border);
+    display:flex; gap:16px; flex-wrap:wrap; align-items:center; font-size:12.5px; color:var(--ink-soft);
   }
-  .container{max-width:1180px; margin:0 auto; padding:22px 24px 60px;}
+  .container{max-width:1180px; margin:0 auto; padding:24px 24px 60px;}
 
   .sheet-panel{
-    background:#fff; border:1px solid var(--thread); border-radius:2px;
-    padding:14px 16px; margin-bottom:22px;
+    background:var(--bg-soft); border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; margin-bottom:20px;
     display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-    box-shadow: 2px 2px 0 rgba(28,43,74,0.06);
   }
-  .sheet-panel input{
-    flex:1; min-width:220px; padding:8px 10px; border:1px solid var(--thread);
-    font-family:inherit; font-size:13px; background:var(--canvas);
+  .sheet-panel input[type=text]{
+    flex:1; min-width:220px; padding:9px 12px; border:1px solid var(--border); border-radius:8px;
+    font-family:inherit; font-size:13px; background:#fff; color:var(--ink-soft);
   }
   .sheet-panel button{
-    background:var(--indigo); color:var(--canvas); border:none; padding:9px 16px;
-    font-family:inherit; font-weight:700; letter-spacing:0.04em; cursor:pointer;
-    text-transform:uppercase; font-size:12px;
+    background:var(--navy); color:#fff; border:none; padding:9px 18px; border-radius:8px;
+    font-family:inherit; font-weight:600; cursor:pointer; font-size:13px;
   }
-  .sheet-panel button:hover{background:var(--indigo-deep);}
-  .sheet-note{width:100%; font-size:11.5px; color:#6b6250; line-height:1.5;}
-  #status{font-size:12px; font-weight:700;}
-  .status-ok{color:#3a6b3a;}
-  .status-err{color:var(--madder);}
-  .status-wait{color:#6b6250;}
+  .sheet-panel button:hover{background:var(--navy-deep);}
+  .sheet-note{width:100%; font-size:12px; color:var(--ink-soft); line-height:1.5;}
+  #status{font-size:12.5px; font-weight:600;}
+  .status-ok{color:var(--green);}
+  .status-err{color:var(--red);}
+  .status-wait{color:var(--ink-soft);}
+
+  .filter-panel{
+    background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    padding:16px 18px; margin-bottom:16px;
+  }
+  .filter-panel .filter-heading{
+    font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:12px;
+    display:flex; justify-content:space-between; align-items:center; font-weight:600;
+  }
+  .filter-row{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-end;}
+  .filter-field{display:flex; flex-direction:column; gap:5px; font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; font-weight:600;}
+  .filter-field select, .filter-field input{
+    font-family:inherit; font-size:13px; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    background:#fff; color:var(--ink); text-transform:none; letter-spacing:0; min-width:140px;
+  }
+  .filter-field select:focus, .filter-field input:focus{outline:2px solid var(--navy); outline-offset:1px;}
+  .month-chips{display:flex; gap:6px; flex-wrap:wrap; max-width:440px;}
+  .month-chip{
+    font-size:12px; padding:6px 12px; border:1px solid var(--border); border-radius:20px; background:#fff;
+    cursor:pointer; user-select:none; white-space:nowrap; color:var(--ink-soft); font-weight:500;
+  }
+  .month-chip.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .reset-link{
+    background:none; border:none; color:var(--amber); font-family:inherit; font-size:12px; font-weight:600;
+    cursor:pointer; letter-spacing:0.02em; padding:0;
+  }
+  .reset-link:hover{text-decoration:underline;}
+  .result-note{font-size:12px; color:var(--ink-soft); margin-top:10px;}
 
   .tags-row{
     display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:16px; margin-bottom:26px;
+    gap:14px; margin-bottom:28px;
   }
   .tag{
-    background:#fff; position:relative; border:1px solid var(--thread);
-    padding:18px 16px 16px 34px; box-shadow:2px 2px 0 rgba(28,43,74,0.08);
+    background:var(--bg); border:1px solid var(--border); border-left:3px solid var(--navy); border-radius:10px;
+    padding:16px 18px;
   }
-  .tag::before{
-    content:''; position:absolute; left:14px; top:16px; width:9px; height:9px;
-    border-radius:50%; border:2px solid var(--indigo); background:var(--canvas);
-  }
-  .tag::after{
-    content:''; position:absolute; left:14px; top:25px; bottom:16px; width:0;
-    border-left:1px dashed var(--thread);
-  }
-  .tag-label{font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:#6b6250;}
-  .tag-value{font-size:26px; font-weight:900; font-family:'Arial Black',sans-serif; color:var(--indigo); margin-top:4px;}
-  .tag-value.accent{color:var(--madder);}
+  .tag:nth-child(2){border-left-color:var(--slate);}
+  .tag:nth-child(3){border-left-color:var(--green);}
+  .tag:nth-child(4){border-left-color:var(--amber);}
+  .tag-label{font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); font-weight:600;}
+  .tag-value{font-family:'IBM Plex Mono', monospace; font-size:24px; font-weight:600; color:var(--ink); margin-top:6px;}
 
   .section-title{
-    display:flex; align-items:center; gap:10px; margin:34px 0 14px;
+    display:flex; align-items:center; gap:10px; margin:36px 0 14px;
   }
   .section-title .num{
-    background:var(--indigo); color:var(--canvas); font-weight:900; font-size:13px;
-    padding:3px 9px;
+    color:var(--ink-soft); font-weight:700; font-size:12px; font-family:'IBM Plex Mono',monospace;
   }
   .section-title h2{
-    font-family:'Arial Black',sans-serif; font-size:16px; text-transform:uppercase;
-    letter-spacing:0.04em; margin:0;
+    font-size:15px; font-weight:700; letter-spacing:-0.01em; margin:0; color:var(--ink);
   }
-  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:18px;}
-  .grid-2b{display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:16px;}
+  .grid-2b{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
   @media (max-width:820px){ .grid-2, .grid-2b{grid-template-columns:1fr;} }
 
   .panel{
-    background:#fff; border:1px solid var(--thread); padding:18px;
-    box-shadow:2px 2px 0 rgba(28,43,74,0.06);
+    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:18px;
   }
   .panel h3{
-    margin:0 0 12px; font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:#6b6250;
+    margin:0 0 14px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft);
   }
   canvas{max-height:280px;}
 
-  table{width:100%; border-collapse:collapse; font-size:12.5px;}
-  th,td{text-align:left; padding:7px 6px; border-bottom:1px solid var(--canvas);}
-  th{text-transform:uppercase; font-size:10.5px; letter-spacing:0.06em; color:#6b6250; border-bottom:2px solid var(--thread);}
-  tr:hover td{background:var(--canvas);}
-  .flag-cell{white-space:nowrap;}
-  .empty-note{color:#8a8069; font-style:italic; font-size:13px; padding:20px 0; text-align:center;}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:520px;}
+  th,td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); white-space:nowrap;}
+  th{text-transform:uppercase; font-size:10.5px; letter-spacing:0.04em; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--border);}
+  td.num-cell{font-family:'IBM Plex Mono', monospace;}
+  tr:hover td{background:var(--bg-soft);}
+  .empty-note{color:var(--ink-soft); font-style:italic; font-size:13px; padding:24px 0; text-align:center; white-space:normal;}
 
   footer{
-    text-align:center; font-size:11px; color:#8a8069; padding:20px 0 40px;
+    text-align:center; font-size:12px; color:var(--ink-soft); padding:24px 0 40px;
   }
 </style>
+
 </head>
 <body>
 
@@ -150,11 +160,11 @@
   <div class="brand-row">
     <div>
       <div class="brand-title">Nusrat Enterprises</div>
-      <div class="brand-sub">Men's &amp; Kids' Wear · Wholesale + Retail · Bhubaneswar</div>
+      <div class="brand-sub">Men's &amp; Kids' Wear &middot; Wholesale + Retail &middot; Bhubaneswar</div>
     </div>
-    <div class="brand-sub" style="text-align:right">NE Street Wear<br>Sales Ledger</div>
+    <div class="brand-sub" style="text-align:right">NE Street Wear<br>Sales Dashboard</div>
   </div>
-  <div class="stitch-line" id="dateRange">Loading period…</div>
+  <div class="stitch-line" id="dateRange">Loading period&hellip;</div>
 </header>
 
 <div class="container">
@@ -164,22 +174,56 @@
     <button id="loadBtn" onclick="loadAll()">Refresh Ledger</button>
     <span id="status" class="status-wait">Not loaded yet</span>
     <div class="sheet-note">
-      Data is pulled live from Google Sheets (no server, no key). The sheet must be shared as
-      <b>"Anyone with the link → Viewer"</b> — otherwise loading will fail.
+      Data is pulled live from Google Sheets via a JSONP request (no server, no key, no CORS issues).
+      The sheet must be shared as <b>"Anyone with the link &rarr; Viewer"</b>.
       Paste a different Sheet ID above to point this dashboard at another workbook.
     </div>
   </div>
 
   <div class="tags-row" id="kpiRow">
-    <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">—</div></div>
-    <div class="tag"><div class="tag-label">Invoices Billed</div><div class="tag-value" id="kpiInvoices">—</div></div>
-    <div class="tag"><div class="tag-label">Customers on File</div><div class="tag-value" id="kpiCustomers">—</div></div>
-    <div class="tag"><div class="tag-label">Avg. Bill Value</div><div class="tag-value accent" id="kpiAvg">—</div></div>
+    <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">&mdash;</div></div>
+    <div class="tag"><div class="tag-label">Invoices Billed</div><div class="tag-value" id="kpiInvoices">&mdash;</div></div>
+    <div class="tag"><div class="tag-label">Customers Matched</div><div class="tag-value" id="kpiCustomers">&mdash;</div></div>
+    <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div></div>
+  </div>
+
+  <div class="filter-panel">
+    <div class="filter-heading">
+      <span>Sales Filters &mdash; controls charts in sections 01 &amp; 02</span>
+      <button class="reset-link" onclick="resetSalesFilters()">Reset</button>
+    </div>
+    <div class="filter-row">
+      <div class="filter-field">
+        Month
+        <div class="month-chips" id="monthChips"></div>
+      </div>
+      <div class="filter-field">
+        Sale Type
+        <select id="filterSaleType">
+          <option value="All">All</option>
+          <option value="Retail">Retail</option>
+          <option value="Wholesale">Wholesale</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        Payment Mode
+        <select id="filterPayment"><option value="All">All</option></select>
+      </div>
+      <div class="filter-field">
+        From
+        <input type="date" id="filterFrom">
+      </div>
+      <div class="filter-field">
+        To
+        <input type="date" id="filterTo">
+      </div>
+    </div>
+    <div class="result-note" id="salesResultNote"></div>
   </div>
 
   <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
   <div class="grid-2">
-    <div class="panel"><h3>Monthly Sales (₹)</h3><canvas id="monthChart"></canvas></div>
+    <div class="panel"><h3>Monthly Sales (&#8377;)</h3><canvas id="monthChart"></canvas></div>
     <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
   </div>
 
@@ -195,23 +239,93 @@
     <div class="panel"><h3>Retention Flags (Retail)</h3><canvas id="flagRetailChart"></canvas></div>
   </div>
 
-  <div class="section-title"><span class="num">04</span><h2>Top Customers by Lifetime Sale</h2></div>
-  <div class="panel">
-    <table id="topCustTable">
-      <thead><tr><th>Name</th><th>Type</th><th>Lifetime Sale (₹)</th><th>Last Purchase</th><th>Gap (days)</th><th>Flag</th></tr></thead>
-      <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
-    </table>
+  <div class="section-title"><span class="num">04</span><h2>Customers</h2></div>
+
+  <div class="filter-panel">
+    <div class="filter-heading">
+      <span>Customer Filters &mdash; controls retention charts &amp; table below</span>
+      <button class="reset-link" onclick="resetCustomerFilters()">Reset</button>
+    </div>
+    <div class="filter-row">
+      <div class="filter-field">
+        Customer Type
+        <select id="filterCustType">
+          <option value="All">All</option>
+          <option value="Wholesale">Wholesale</option>
+          <option value="Retail">Retail</option>
+        </select>
+      </div>
+      <div class="filter-field">
+        Flag
+        <select id="filterFlag"><option value="All">All</option></select>
+      </div>
+      <div class="filter-field">
+        Search Name
+        <input type="text" id="filterSearch" placeholder="e.g. Sameer">
+      </div>
+      <div class="filter-field">
+        Sort By
+        <select id="filterSort">
+          <option value="sale_desc">Sale: High &rarr; Low</option>
+          <option value="sale_asc">Sale: Low &rarr; High</option>
+          <option value="gap_desc">Gap: High &rarr; Low</option>
+          <option value="gap_asc">Gap: Low &rarr; High</option>
+          <option value="name_asc">Name: A &rarr; Z</option>
+        </select>
+      </div>
+    </div>
+    <div class="result-note" id="custResultNote"></div>
   </div>
 
-  <footer>Nusrat Enterprises &amp; NE Street Wear — live sheet-powered ledger</footer>
+  <div class="panel">
+    <div class="table-wrap">
+    <table id="topCustTable">
+      <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
+      <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+    </table>
+    </div>
+  </div>
+
+  <footer>Nusrat Enterprises &amp; NE Street Wear</footer>
 </div>
 
 <script>
 const charts = {};
+let RAW = { invoices: [], items: [], wholesale: [], retail: [] };
+
 function fmtINR(n){
-  if(n===null||n===undefined||isNaN(n)) return '—';
-  return '₹' + Math.round(n).toLocaleString('en-IN');
+  if(n===null||n===undefined||isNaN(n)) return '&mdash;'.replace('&mdash;','\u2014');
+  return '\u20b9' + Math.round(n).toLocaleString('en-IN');
 }
+function num(v){
+  if(v===undefined||v===null||v==='') return 0;
+  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
+  return isNaN(n) ? 0 : n;
+}
+function cleanFlag(f){
+  return (f||'Unknown').toString().replace(/^[^\w]*/, '').trim() || 'Unknown';
+}
+function cleanSaleType(t){
+  const s = (t||'').toString().trim();
+  return s || 'Unknown';
+}
+function cleanPayment(t){
+  const s = (t||'').toString().trim();
+  return s || 'Unknown';
+}
+const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function parseInvoiceDate(str){
+  if(!str) return null;
+  str = String(str).trim();
+  const monthMap = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  let m = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if(m) return new Date(parseInt(m[3]), monthMap[m[2]], parseInt(m[1]));
+  const d = new Date(str);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
 
 // Google's gviz CSV endpoint doesn't send CORS headers, so fetch() always fails
 // cross-origin. JSONP (a <script> tag) is not subject to CORS, so we use that instead.
@@ -261,20 +375,10 @@ function fetchSheet(sheetId, sheetName){
   });
 }
 
-function num(v){
-  if(v===undefined||v===null||v==='') return 0;
-  const n = parseFloat(String(v).replace(/[^0-9.\-]/g,''));
-  return isNaN(n) ? 0 : n;
-}
-
-const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-
-function destroy(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
-
 async function loadAll(){
   const sheetId = document.getElementById('sheetId').value.trim();
   const statusEl = document.getElementById('status');
-  statusEl.textContent = 'Fetching…';
+  statusEl.textContent = 'Fetching\u2026';
   statusEl.className = 'status-wait';
 
   try{
@@ -284,18 +388,10 @@ async function loadAll(){
       fetchSheet(sheetId, 'Wholesale_list'),
       fetchSheet(sheetId, 'Retail_list'),
     ]);
-
-    renderKPIs(invoices, wholesale, retail);
-    renderMonthChart(invoices);
-    renderTypeChart(invoices);
-    renderItemChart(items);
-    renderPaymentChart(invoices);
-    renderFlagChart('flagWholesaleChart', wholesale);
-    renderFlagChart('flagRetailChart', retail);
-    renderTopCustomers(wholesale, retail);
-    renderDateRange(invoices);
-
-    statusEl.textContent = `Loaded ✓ (${invoices.length} invoices)`;
+    RAW = { invoices, items, wholesale, retail };
+    initFilters();
+    applyFilters();
+    statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
     statusEl.textContent = 'Error: ' + err.message;
@@ -304,23 +400,176 @@ async function loadAll(){
   }
 }
 
+let activeMonths = new Set(); // empty = all
+
+function initFilters(){
+  // Month chips
+  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  activeMonths = new Set(); // start with all months = no filter applied
+  const chipWrap = document.getElementById('monthChips');
+  chipWrap.innerHTML = monthsPresent.map(m => `<span class="month-chip" data-month="${m}" onclick="toggleMonth('${m}')">${m.slice(0,3)}</span>`).join('');
+
+  // Payment modes
+  const payments = [...new Set(RAW.invoices.map(r => cleanPayment(r['Payment Mode'])).filter(Boolean))];
+  const paySel = document.getElementById('filterPayment');
+  paySel.innerHTML = '<option value="All">All</option>' + payments.map(p => `<option value="${p}">${p}</option>`).join('');
+
+  // Flags
+  const allCust = [...RAW.wholesale, ...RAW.retail];
+  const flags = [...new Set(allCust.map(r => cleanFlag(r['Flag'])))];
+  const flagSel = document.getElementById('filterFlag');
+  flagSel.innerHTML = '<option value="All">All</option>' + flags.map(f => `<option value="${f}">${f}</option>`).join('');
+
+  // Date range bounds
+  const dates = RAW.invoices.map(r => parseInvoiceDate(r['Date'])).filter(Boolean).sort((a,b)=>a-b);
+  if(dates.length){
+    document.getElementById('filterFrom').min = dates[0].toISOString().slice(0,10);
+    document.getElementById('filterFrom').max = dates[dates.length-1].toISOString().slice(0,10);
+    document.getElementById('filterTo').min = dates[0].toISOString().slice(0,10);
+    document.getElementById('filterTo').max = dates[dates.length-1].toISOString().slice(0,10);
+  }
+
+  // Event listeners (idempotent thanks to onchange overwrite pattern below)
+  document.getElementById('filterSaleType').onchange = applyFilters;
+  document.getElementById('filterPayment').onchange = applyFilters;
+  document.getElementById('filterFrom').onchange = applyFilters;
+  document.getElementById('filterTo').onchange = applyFilters;
+  document.getElementById('filterCustType').onchange = applyCustomerFilters;
+  document.getElementById('filterFlag').onchange = applyCustomerFilters;
+  document.getElementById('filterSort').onchange = applyCustomerFilters;
+  document.getElementById('filterSearch').oninput = applyCustomerFilters;
+}
+
+function toggleMonth(m){
+  if(activeMonths.has(m)) activeMonths.delete(m);
+  else activeMonths.add(m);
+  document.querySelectorAll('.month-chip').forEach(chip => {
+    chip.classList.toggle('active', activeMonths.has(chip.dataset.month));
+  });
+  applyFilters();
+}
+
+function resetSalesFilters(){
+  activeMonths = new Set();
+  document.querySelectorAll('.month-chip').forEach(chip => chip.classList.remove('active'));
+  document.getElementById('filterSaleType').value = 'All';
+  document.getElementById('filterPayment').value = 'All';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  applyFilters();
+}
+
+function resetCustomerFilters(){
+  document.getElementById('filterCustType').value = 'All';
+  document.getElementById('filterFlag').value = 'All';
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterSort').value = 'sale_desc';
+  applyCustomerFilters();
+}
+
+function applyFilters(){
+  if(!RAW.invoices.length && !RAW.items.length){ applyCustomerFilters(); return; }
+
+  const saleType = document.getElementById('filterSaleType').value;
+  const payment = document.getElementById('filterPayment').value;
+  const fromVal = document.getElementById('filterFrom').value;
+  const toVal = document.getElementById('filterTo').value;
+  const fromDate = fromVal ? new Date(fromVal) : null;
+  const toDate = toVal ? new Date(toVal) : null;
+
+  const filteredInvoices = RAW.invoices.filter(r => {
+    if(activeMonths.size && !activeMonths.has(r['Month'])) return false;
+    if(saleType !== 'All' && cleanSaleType(r['Sale Type']) !== saleType) return false;
+    if(payment !== 'All' && cleanPayment(r['Payment Mode']) !== payment) return false;
+    const d = parseInvoiceDate(r['Date']);
+    if(fromDate && d && d < fromDate) return false;
+    if(toDate && d && d > toDate) return false;
+    return true;
+  });
+
+  const filteredItems = RAW.items.filter(r => {
+    if(activeMonths.size && !activeMonths.has(r['Month'])) return false;
+    if(saleType !== 'All' && cleanSaleType(r['Sale Type']) !== saleType) return false;
+    return true;
+  });
+
+  renderMonthChart(filteredInvoices);
+  renderTypeChart(filteredInvoices);
+  renderItemChart(filteredItems);
+  renderPaymentChart(filteredInvoices);
+  renderDateRange(filteredInvoices);
+  renderSalesKPIs(filteredInvoices);
+
+  document.getElementById('salesResultNote').textContent =
+    `Showing ${filteredInvoices.length} of ${RAW.invoices.length} invoices, ${filteredItems.length} of ${RAW.items.length} line items`;
+
+  applyCustomerFilters();
+}
+
+function applyCustomerFilters(){
+  const custType = document.getElementById('filterCustType').value;
+  const flag = document.getElementById('filterFlag').value;
+  const search = document.getElementById('filterSearch').value.trim().toLowerCase();
+  const sortMode = document.getElementById('filterSort').value;
+
+  const matches = (r) => {
+    if(flag !== 'All' && cleanFlag(r['Flag']) !== flag) return false;
+    if(search && !(r['Name']||'').toLowerCase().includes(search)) return false;
+    return true;
+  };
+
+  const wholesaleForChart = (custType === 'Retail') ? [] : RAW.wholesale.filter(matches);
+  const retailForChart = (custType === 'Wholesale') ? [] : RAW.retail.filter(matches);
+  renderFlagChart('flagWholesaleChart', wholesaleForChart);
+  renderFlagChart('flagRetailChart', retailForChart);
+
+  let combined = [
+    ...wholesaleForChart.map(r => ({...r, __type:'Wholesale'})),
+    ...retailForChart.map(r => ({...r, __type:'Retail'})),
+  ];
+
+  combined.sort((a,b) => {
+    if(sortMode==='sale_desc') return num(b['Sale']) - num(a['Sale']);
+    if(sortMode==='sale_asc') return num(a['Sale']) - num(b['Sale']);
+    if(sortMode==='gap_desc') return num(b['Gap']) - num(a['Gap']);
+    if(sortMode==='gap_asc') return num(a['Gap']) - num(b['Gap']);
+    if(sortMode==='name_asc') return (a['Name']||'').localeCompare(b['Name']||'');
+    return 0;
+  });
+
+  renderTopCustomers(combined);
+  renderCustomerKPI(combined.length);
+
+  document.getElementById('custResultNote').textContent =
+    `Showing ${combined.length} of ${RAW.wholesale.length + RAW.retail.length} customers`;
+}
+
 function renderDateRange(invoices){
   const dates = invoices.map(r => r['Date']).filter(Boolean);
   const el = document.getElementById('dateRange');
-  if(!dates.length){ el.textContent = 'No invoice dates found'; return; }
-  el.innerHTML = `<span>📋 Ledger period: ${dates[0]} — ${dates[dates.length-1]}</span><span>·</span><span>${invoices.length} invoices on record</span>`;
+  if(!dates.length){ el.textContent = 'No invoices match the current filters'; return; }
+  el.innerHTML = `<span>\ud83d\udccb Showing: ${dates[0]} \u2014 ${dates[dates.length-1]}</span><span>\u00b7</span><span>${invoices.length} invoices</span>`;
 }
 
-function renderKPIs(invoices, wholesale, retail){
+function isSameDay(d1, d2){
+  return d1 && d2 && d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
+}
+
+function renderSalesKPIs(invoices){
   const totalSales = invoices.reduce((s,r) => s + num(r['Paid']), 0);
   const invoiceCount = new Set(invoices.map(r => r['Invoice'])).size || invoices.length;
-  const custCount = wholesale.length + retail.length;
-  const avg = invoiceCount ? totalSales / invoiceCount : 0;
-
+  const today = new Date();
+  const todaySales = invoices.reduce((s,r) => {
+    const d = parseInvoiceDate(r['Date']);
+    return isSameDay(d, today) ? s + num(r['Paid']) : s;
+  }, 0);
   document.getElementById('kpiSales').textContent = fmtINR(totalSales);
   document.getElementById('kpiInvoices').textContent = invoiceCount.toLocaleString('en-IN');
-  document.getElementById('kpiCustomers').textContent = custCount.toLocaleString('en-IN');
-  document.getElementById('kpiAvg').textContent = fmtINR(avg);
+  document.getElementById('kpiToday').textContent = fmtINR(todaySales);
+}
+
+function renderCustomerKPI(count){
+  document.getElementById('kpiCustomers').textContent = count.toLocaleString('en-IN');
 }
 
 function renderMonthChart(invoices){
@@ -335,15 +584,15 @@ function renderMonthChart(invoices){
   destroy('monthChart');
   charts.monthChart = new Chart(document.getElementById('monthChart'), {
     type:'bar',
-    data:{ labels, datasets:[{ label:'Sales (₹)', data, backgroundColor:'#1c2b4a' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+    data:{ labels, datasets:[{ label:'Sales (\u20b9)', data, backgroundColor:'#1c2b4a' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } } } }
   });
 }
 
 function renderTypeChart(invoices){
   const byType = {};
   invoices.forEach(r => {
-    const t = r['Sale Type'] || 'Unknown';
+    const t = cleanSaleType(r['Sale Type']);
     byType[t] = (byType[t]||0) + num(r['Paid']);
   });
   destroy('typeChart');
@@ -364,7 +613,7 @@ function renderItemChart(items){
   destroy('itemChart');
   charts.itemChart = new Chart(document.getElementById('itemChart'), {
     type:'bar',
-    data:{ labels: sorted.map(x=>x[0]), datasets:[{ label:'Revenue (₹)', data: sorted.map(x=>x[1]), backgroundColor:'#d99a2b' }] },
+    data:{ labels: sorted.map(x=>x[0]), datasets:[{ label:'Revenue (\u20b9)', data: sorted.map(x=>x[1]), backgroundColor:'#d99a2b' }] },
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}} }
   });
 }
@@ -372,7 +621,7 @@ function renderItemChart(items){
 function renderPaymentChart(invoices){
   const byMode = {};
   invoices.forEach(r => {
-    const m = r['Payment Mode'] || 'Unknown';
+    const m = cleanPayment(r['Payment Mode']);
     byMode[m] = (byMode[m]||0) + num(r['Paid']);
   });
   destroy('paymentChart');
@@ -386,7 +635,7 @@ function renderPaymentChart(invoices){
 function renderFlagChart(canvasId, list){
   const byFlag = {};
   list.forEach(r => {
-    const f = (r['Flag']||'Unknown').replace(/^[^\w]*/, '').trim() || 'Unknown';
+    const f = cleanFlag(r['Flag']);
     byFlag[f] = (byFlag[f]||0) + 1;
   });
   destroy(canvasId);
@@ -397,32 +646,26 @@ function renderFlagChart(canvasId, list){
   });
 }
 
-function renderTopCustomers(wholesale, retail){
-  const all = [
-    ...wholesale.map(r => ({...r, __type:'Wholesale'})),
-    ...retail.map(r => ({...r, __type:'Retail'})),
-  ];
-  all.sort((a,b) => num(b['Sale']) - num(a['Sale']));
-  const top = all.slice(0,15);
+function renderTopCustomers(list){
   const tbody = document.querySelector('#topCustTable tbody');
-  if(!top.length){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No customer data found.</td></tr>';
+  if(!list.length){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
-  tbody.innerHTML = top.map(r => `
+  const shown = list.slice(0,30);
+  tbody.innerHTML = shown.map(r => `
     <tr>
       <td>${r['Name'] || '—'}</td>
+      <td class="num-cell">${r['Phone'] || '—'}</td>
       <td>${r.__type}</td>
-      <td>${fmtINR(num(r['Sale']))}</td>
+      <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
       <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
-      <td>${r['Gap'] || '—'}</td>
-      <td class="flag-cell">${r['Flag'] || '—'}</td>
+      <td class="num-cell">${r['Gap'] || '—'}</td>
     </tr>
-  `).join('');
+  `).join('') + (list.length > 30 ? `<tr><td colspan="6" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
 }
-
-// Auto-load on first visit
-loadAll();
 </script>
+
+loadAll();
 </body>
 </html>
