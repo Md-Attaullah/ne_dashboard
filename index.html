@@ -148,6 +148,46 @@
   tr:hover td{background:var(--bg-soft);}
   .empty-note{color:var(--ink-soft); font-style:italic; font-size:13px; padding:24px 0; text-align:center; white-space:normal;}
 
+
+  .tag-trend{font-size:11px; font-weight:600; margin-top:6px;}
+  .trend-up{color:var(--green);}
+  .trend-down{color:var(--red);}
+  .trend-flat{color:var(--ink-soft);}
+
+  @media (max-width:480px){
+    .tags-row{grid-template-columns:1fr 1fr; gap:10px;}
+    .tag{padding:12px 14px;}
+    .tag-value{font-size:19px;}
+  }
+  @media (max-width:340px){
+    .tags-row{grid-template-columns:1fr;}
+  }
+
+  .alert-panel{
+    background:#fff7ed; border:1px solid #f3ceac; border-radius:10px; padding:16px 18px; margin-bottom:16px;
+  }
+  .alert-panel.calm{background:var(--bg-soft); border-color:var(--border);}
+  .alert-panel h3{margin:0 0 10px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--amber);}
+  .alert-panel.calm h3{color:var(--ink-soft);}
+  .alert-item{font-size:13px; padding:6px 0; border-bottom:1px dashed #f0dcc4; color:var(--ink);}
+  .alert-panel.calm .alert-item{border-bottom-color:var(--border);}
+  .alert-item:last-child{border-bottom:none;}
+  .alert-item b{font-family:'IBM Plex Mono',monospace;}
+
+  .wa-btn{
+    display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#1f8a4c;
+    text-decoration:none; border:1px solid #bfe3cc; background:#f1fbf5; padding:3px 8px; border-radius:14px;
+    margin-left:8px; white-space:nowrap;
+  }
+  .wa-btn:hover{background:#e2f6e9;}
+
+  .drilldown-panel{margin-top:14px; display:none;}
+  .drilldown-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .drilldown-head h3{margin:0; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft);}
+  .drilldown-close{background:none; border:none; color:var(--amber); font-weight:600; font-size:12px; cursor:pointer;}
+  .drilldown-close:hover{text-decoration:underline;}
+  .hint-text{font-size:11.5px; color:var(--ink-soft); margin-top:8px; font-style:italic;}
+
   footer{
     text-align:center; font-size:12px; color:var(--ink-soft); padding:24px 0 40px;
   }
@@ -181,10 +221,16 @@
   </div>
 
   <div class="tags-row" id="kpiRow">
-    <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">&mdash;</div></div>
-    <div class="tag"><div class="tag-label">Invoices Billed</div><div class="tag-value" id="kpiInvoices">&mdash;</div></div>
+    <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">&mdash;</div><div class="tag-trend" id="trendSales"></div></div>
+    <div class="tag"><div class="tag-label">Invoices Billed</div><div class="tag-value" id="kpiInvoices">&mdash;</div><div class="tag-trend" id="trendInvoices"></div></div>
     <div class="tag"><div class="tag-label">Customers Matched</div><div class="tag-value" id="kpiCustomers">&mdash;</div></div>
-    <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div></div>
+    <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div><div class="tag-trend" id="trendToday"></div></div>
+  </div>
+
+  <div class="alert-panel" id="callListPanel">
+    <h3>&#128222; Needs a Call Today</h3>
+    <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
+    <div class="hint-text">High Risk &amp; Attention Required customers, sorted by longest gap since last purchase. Independent of the filters below.</div>
   </div>
 
   <div class="filter-panel">
@@ -227,19 +273,44 @@
     <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
   </div>
 
+  <div class="panel drilldown-panel" id="drilldownPanel">
+    <div class="drilldown-head">
+      <h3 id="drilldownTitle">Invoices for &mdash;</h3>
+      <button class="drilldown-close" onclick="closeDrilldown()">Close &times;</button>
+    </div>
+    <div class="table-wrap">
+      <table id="drilldownTable">
+        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="hint-text" id="drilldownHint">Tip: click any bar in the Monthly Sales chart above to see that month's invoices.</div>
+
   <div class="section-title"><span class="num">02</span><h2>Product Mix</h2></div>
   <div class="grid-2b">
     <div class="panel"><h3>Top Item Types by Revenue</h3><canvas id="itemChart"></canvas></div>
     <div class="panel"><h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas></div>
   </div>
+  <div class="alert-panel calm" id="slowMoverPanel">
+    <h3>&#128202; Item Trend Watch (vs. previous month)</h3>
+    <div id="slowMoverBody"><div class="alert-item">Loading&hellip;</div></div>
+  </div>
 
-  <div class="section-title"><span class="num">03</span><h2>Customer Retention</h2></div>
+
+  <div class="section-title"><span class="num">03</span><h2>Sales by Day of Week</h2></div>
+  <div class="panel">
+    <h3>Which weekdays sell best</h3>
+    <canvas id="dowChart"></canvas>
+  </div>
+
+  <div class="section-title"><span class="num">04</span><h2>Customer Retention</h2></div>
   <div class="grid-2b">
     <div class="panel"><h3>Retention Flags (Wholesale)</h3><canvas id="flagWholesaleChart"></canvas></div>
     <div class="panel"><h3>Retention Flags (Retail)</h3><canvas id="flagRetailChart"></canvas></div>
   </div>
 
-  <div class="section-title"><span class="num">04</span><h2>Customers</h2></div>
+  <div class="section-title"><span class="num">05</span><h2>Customers</h2></div>
 
   <div class="filter-panel">
     <div class="filter-heading">
@@ -391,6 +462,8 @@ async function loadAll(){
     RAW = { invoices, items, wholesale, retail };
     initFilters();
     applyFilters();
+    renderTrends();
+    renderCallList();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
@@ -398,6 +471,20 @@ async function loadAll(){
     statusEl.className = 'status-err';
     console.error(err);
   }
+}
+
+function waLink(phone, name){
+  const digits = String(phone||'').replace(/\D/g,'');
+  const withCountry = digits.length===10 ? '91'+digits : digits;
+  const msg = encodeURIComponent(`Hi ${name||'there'}, this is Nusrat Enterprises. We miss seeing you at the store! Do drop by soon 😊`);
+  return `https://wa.me/${withCountry}?text=${msg}`;
+}
+function waButton(phone, name){
+  if(!phone) return '';
+  return `<a class="wa-btn" href="${waLink(phone,name)}" target="_blank" rel="noopener">&#128172; WA</a>`;
+}
+function isSameDay(d1, d2){
+  return d1 && d2 && d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
 }
 
 let activeMonths = new Set(); // empty = all
@@ -497,6 +584,8 @@ function applyFilters(){
   renderTypeChart(filteredInvoices);
   renderItemChart(filteredItems);
   renderPaymentChart(filteredInvoices);
+  renderDowChart(filteredInvoices);
+  renderSlowMovers(filteredItems);
   renderDateRange(filteredInvoices);
   renderSalesKPIs(filteredInvoices);
 
@@ -551,10 +640,6 @@ function renderDateRange(invoices){
   el.innerHTML = `<span>\ud83d\udccb Showing: ${dates[0]} \u2014 ${dates[dates.length-1]}</span><span>\u00b7</span><span>${invoices.length} invoices</span>`;
 }
 
-function isSameDay(d1, d2){
-  return d1 && d2 && d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
-}
-
 function renderSalesKPIs(invoices){
   const totalSales = invoices.reduce((s,r) => s + num(r['Paid']), 0);
   const invoiceCount = new Set(invoices.map(r => r['Invoice'])).size || invoices.length;
@@ -566,6 +651,56 @@ function renderSalesKPIs(invoices){
   document.getElementById('kpiSales').textContent = fmtINR(totalSales);
   document.getElementById('kpiInvoices').textContent = invoiceCount.toLocaleString('en-IN');
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
+}
+
+function trendHTML(pct){
+  if(pct === null) return '<span class="trend-flat">No prior data</span>';
+  if(Math.abs(pct) < 0.5) return '<span class="trend-flat">&#9679; flat vs last month</span>';
+  const dir = pct > 0 ? 'up' : 'down';
+  const arrow = pct > 0 ? '&#9650;' : '&#9660;';
+  return `<span class="trend-${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs last month</span>`;
+}
+
+function renderTrends(){
+  // Always based on the FULL unfiltered dataset, so trend context stays stable regardless of filters
+  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  if(monthsPresent.length < 2){
+    document.getElementById('trendSales').innerHTML = '';
+    document.getElementById('trendInvoices').innerHTML = '';
+  } else {
+    const latest = monthsPresent[monthsPresent.length-1];
+    const prev = monthsPresent[monthsPresent.length-2];
+    const latestInv = RAW.invoices.filter(r => r['Month']===latest);
+    const prevInv = RAW.invoices.filter(r => r['Month']===prev);
+    const latestTotal = latestInv.reduce((s,r)=>s+num(r['Paid']),0);
+    const prevTotal = prevInv.reduce((s,r)=>s+num(r['Paid']),0);
+    const latestCount = new Set(latestInv.map(r=>r['Invoice'])).size;
+    const prevCount = new Set(prevInv.map(r=>r['Invoice'])).size;
+    const salesPct = prevTotal > 0 ? ((latestTotal-prevTotal)/prevTotal)*100 : null;
+    const invPct = prevCount > 0 ? ((latestCount-prevCount)/prevCount)*100 : null;
+    document.getElementById('trendSales').innerHTML = trendHTML(salesPct);
+    document.getElementById('trendInvoices').innerHTML = trendHTML(invPct);
+  }
+
+  // Today vs same weekday last week
+  const today = new Date();
+  const lastWeek = new Date(today); lastWeek.setDate(lastWeek.getDate()-7);
+  const todayTotal = RAW.invoices.reduce((s,r)=>{
+    const d = parseInvoiceDate(r['Date']);
+    return isSameDay(d, today) ? s + num(r['Paid']) : s;
+  }, 0);
+  const lastWeekTotal = RAW.invoices.reduce((s,r)=>{
+    const d = parseInvoiceDate(r['Date']);
+    return isSameDay(d, lastWeek) ? s + num(r['Paid']) : s;
+  }, 0);
+  if(lastWeekTotal > 0){
+    const pct = ((todayTotal-lastWeekTotal)/lastWeekTotal)*100;
+    const dir = pct > 0 ? 'up' : (pct < 0 ? 'down' : 'flat');
+    const arrow = pct > 0 ? '&#9650;' : (pct < 0 ? '&#9660;' : '&#9679;');
+    document.getElementById('trendToday').innerHTML = `<span class="trend-${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs same day last week</span>`;
+  } else {
+    document.getElementById('trendToday').innerHTML = '<span class="trend-flat">vs same day last week: no data</span>';
+  }
 }
 
 function renderCustomerKPI(count){
@@ -585,7 +720,18 @@ function renderMonthChart(invoices){
   charts.monthChart = new Chart(document.getElementById('monthChart'), {
     type:'bar',
     data:{ labels, datasets:[{ label:'Sales (\u20b9)', data, backgroundColor:'#1c2b4a' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } } } }
+    options:{
+      responsive:true,
+      plugins:{legend:{display:false}},
+      scales:{ y:{ ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } } },
+      onClick:(evt, elements) => {
+        if(!elements.length) return;
+        const idx = elements[0].index;
+        const label = labels[idx];
+        const invoicesForMonth = invoices.filter(r => r['Month']===label);
+        showDrilldown(label, invoicesForMonth);
+      }
+    }
   });
 }
 
@@ -656,13 +802,118 @@ function renderTopCustomers(list){
   tbody.innerHTML = shown.map(r => `
     <tr>
       <td>${r['Name'] || '—'}</td>
-      <td class="num-cell">${r['Phone'] || '—'}</td>
+      <td class="num-cell">${r['Phone'] || '—'}${waButton(r['Phone'], r['Name'])}</td>
       <td>${r.__type}</td>
       <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
       <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
       <td class="num-cell">${r['Gap'] || '—'}</td>
     </tr>
   `).join('') + (list.length > 30 ? `<tr><td colspan="6" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+}
+
+function renderCallList(){
+  const combined = [
+    ...RAW.wholesale.map(r => ({...r, __type:'Wholesale'})),
+    ...RAW.retail.map(r => ({...r, __type:'Retail'})),
+  ];
+  const needsCall = combined
+    .filter(r => { const f = cleanFlag(r['Flag']); return f.includes('High Risk') || f.includes('Attention'); })
+    .sort((a,b) => num(b['Gap']) - num(a['Gap']))
+    .slice(0, 12);
+
+  const body = document.getElementById('callListBody');
+  if(!needsCall.length){
+    body.innerHTML = '<div class="alert-item">Nobody flagged right now &mdash; retention looks healthy.</div>';
+    return;
+  }
+  body.innerHTML = needsCall.map(r => `
+    <div class="alert-item">
+      <b>${r['Gap']||'?'}d</b> &mdash; ${r['Name']||'Unknown'} (${r.__type}) &mdash; ${r['Flag']||''}
+      ${waButton(r['Phone'], r['Name'])}
+    </div>
+  `).join('');
+}
+
+function renderSlowMovers(items){
+  const monthsPresent = MONTH_ORDER.filter(m => items.some(r => r['Month'] === m));
+  const body = document.getElementById('slowMoverBody');
+  if(monthsPresent.length < 2){
+    body.innerHTML = '<div class="alert-item">Not enough months of data yet to compare trends.</div>';
+    return;
+  }
+  const latest = monthsPresent[monthsPresent.length-1];
+  const prev = monthsPresent[monthsPresent.length-2];
+
+  const revByType = (month) => {
+    const map = {};
+    items.filter(r => r['Month']===month).forEach(r => {
+      const t = r['Type'] || 'Unknown';
+      map[t] = (map[t]||0) + num(r['Amount']);
+    });
+    return map;
+  };
+  const latestMap = revByType(latest);
+  const prevMap = revByType(prev);
+
+  const changes = Object.keys(prevMap)
+    .filter(t => prevMap[t] >= 500) // ignore negligible items
+    .map(t => {
+      const latestVal = latestMap[t] || 0;
+      const prevVal = prevMap[t];
+      const pct = ((latestVal - prevVal) / prevVal) * 100;
+      return { type: t, latestVal, prevVal, pct };
+    })
+    .filter(c => c.pct <= -30)
+    .sort((a,b) => a.pct - b.pct)
+    .slice(0, 5);
+
+  if(!changes.length){
+    body.innerHTML = '<div class="alert-item">No item type has dropped significantly since last month.</div>';
+    return;
+  }
+  body.innerHTML = changes.map(c => `
+    <div class="alert-item">
+      <b>${c.type}</b> down ${Math.abs(c.pct).toFixed(0)}% &mdash; ${fmtINR(c.prevVal)} &rarr; ${fmtINR(c.latestVal)} (${prev} &rarr; ${latest})
+    </div>
+  `).join('');
+}
+
+const DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+function renderDowChart(invoices){
+  const byDow = [0,0,0,0,0,0,0];
+  invoices.forEach(r => {
+    const d = parseInvoiceDate(r['Date']);
+    if(d) byDow[d.getDay()] += num(r['Paid']);
+  });
+  // Reorder Mon-Sun for display
+  const order = [1,2,3,4,5,6,0];
+  const labels = order.map(i => DOW_LABELS[i]);
+  const data = order.map(i => byDow[i]);
+  destroy('dowChart');
+  charts.dowChart = new Chart(document.getElementById('dowChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Sales (₹)', data, backgroundColor:'#5b7290' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+  });
+}
+
+function showDrilldown(monthLabel, invoicesForMonth){
+  document.getElementById('drilldownTitle').textContent = `Invoices for ${monthLabel} (${invoicesForMonth.length})`;
+  const tbody = document.querySelector('#drilldownTable tbody');
+  tbody.innerHTML = invoicesForMonth.slice(0,100).map(r => `
+    <tr>
+      <td>${r['Invoice']||'—'}</td>
+      <td>${r['Customer']||'—'}</td>
+      <td>${r['Date']||'—'}</td>
+      <td>${cleanSaleType(r['Sale Type'])}</td>
+      <td>${cleanPayment(r['Payment Mode'])}</td>
+      <td class="num-cell">${fmtINR(num(r['Paid']))}</td>
+    </tr>
+  `).join('') + (invoicesForMonth.length > 100 ? `<tr><td colspan="6" class="empty-note">+ ${invoicesForMonth.length-100} more invoices this month</td></tr>` : '');
+  document.getElementById('drilldownPanel').style.display = 'block';
+}
+function closeDrilldown(){
+  document.getElementById('drilldownPanel').style.display = 'none';
 }
 </script>
 
