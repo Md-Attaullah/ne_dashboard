@@ -592,7 +592,6 @@ async function loadAll(){
     renderRepeatSplit();
     renderAvgGap();
     renderCohortChart();
-    renderTotalUniqueCustomers();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
@@ -790,9 +789,11 @@ function renderSalesKPIs(invoices, items){
     const d = parseInvoiceDate(r['Date']);
     return isSameDay(d, today) ? s + num(r['Paid']) : s;
   }, 0);
+  const uniqueCustomers = new Set(invoices.map(r => normName(r['Customer'])).filter(Boolean));
   document.getElementById('kpiSales').textContent = fmtINR(totalSales);
   document.getElementById('kpiProducts').textContent = Math.round(totalProducts).toLocaleString('en-IN');
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
+  document.getElementById('kpiCustomers').textContent = uniqueCustomers.size.toLocaleString('en-IN');
 }
 
 function trendHTML(pct, compareLabel){
@@ -851,13 +852,6 @@ function renderTrends(){
   } else {
     document.getElementById('trendToday').innerHTML = '<span class="trend-flat">vs same day last week: no data</span>';
   }
-}
-
-function renderTotalUniqueCustomers(){
-  const names = new Set();
-  RAW.wholesale.forEach(r => { const n = normName(r['Name']); if(n) names.add(n); });
-  RAW.retail.forEach(r => { const n = normName(r['Name']); if(n) names.add(n); });
-  document.getElementById('kpiCustomers').textContent = names.size.toLocaleString('en-IN');
 }
 
 function renderMonthChart(invoices){
