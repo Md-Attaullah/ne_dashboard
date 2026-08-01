@@ -47,6 +47,25 @@
     max-width:1180px; margin:12px auto 0; padding-top:12px; border-top:1px solid var(--border);
     display:flex; gap:16px; flex-wrap:wrap; align-items:center; font-size:12.5px; color:var(--ink-soft);
   }
+  .header-toolbar{ display:flex; flex-direction:column; align-items:flex-end; gap:6px; }
+  .toolbar-row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
+  .toolbar-btn{
+    background:var(--navy); color:#fff; border:none; padding:7px 14px; border-radius:7px;
+    font-family:inherit; font-weight:600; cursor:pointer; font-size:12.5px; white-space:nowrap;
+  }
+  .toolbar-btn:hover{background:var(--navy-deep);}
+  .toolbar-btn.ghost{background:#fff; color:var(--navy); border:1px solid var(--navy);}
+  .toolbar-btn.ghost:hover{background:var(--bg-soft);}
+  .toolbar-input{
+    font-family:inherit; font-size:12px; padding:7px 10px; border:1px solid var(--border); border-radius:7px;
+    background:#fff; color:var(--ink-soft); width:170px;
+  }
+  .toolbar-status{font-size:11.5px; font-weight:600;}
+  @media (max-width:640px){
+    .header-toolbar{align-items:flex-start;}
+    .toolbar-row{justify-content:flex-start;}
+    .toolbar-input{width:140px;}
+  }
   .container{max-width:1180px; margin:0 auto; padding:24px 24px 60px;}
 
   .sheet-panel{
@@ -222,26 +241,31 @@
       <div class="brand-title">Nusrat Enterprises</div>
       <div class="brand-sub">Men's &amp; Kids' Wear &middot; Wholesale + Retail &middot; Bhubaneswar</div>
     </div>
-    <div class="brand-sub" style="text-align:right">NE Street Wear<br>Sales Dashboard</div>
+    <div class="header-toolbar">
+
+  <div class="toolbar-row">
+    <input id="sheetId" type="text" value="1R7yvrGlo-c4W_ywKSWtKA34PJ_Omwby-gJGlzp_EycY" placeholder="Sheet ID" class="toolbar-input" title="Google Sheet ID -- must be shared as Anyone with the link, Viewer">
+    <button class="toolbar-btn" id="loadBtn" onclick="loadAll()" title="Pull latest data from the sheet">&#8635; Refresh</button>
+    <button class="toolbar-btn ghost" onclick="preparePrintSummary()" title="Print a one-page summary">Print</button>
+  </div>
+  <div id="status" class="status-wait toolbar-status">Not loaded yet</div>
+
+    </div>
   </div>
   <div class="stitch-line" id="dateRange">Loading period&hellip;</div>
 </header>
 
 <div class="container">
 
-  <div class="sheet-panel">
-    <input id="sheetId" type="text" value="1R7yvrGlo-c4W_ywKSWtKA34PJ_Omwby-gJGlzp_EycY" placeholder="Google Sheet ID">
-    <button id="loadBtn" onclick="loadAll()">Refresh Ledger</button>
-    <button class="print-btn" onclick="preparePrintSummary()">Print Summary</button>
-    <span id="status" class="status-wait">Not loaded yet</span>
-    <div class="sheet-note">
-      Data is pulled live from Google Sheets via a JSONP request (no server, no key, no CORS issues).
-      The sheet must be shared as <b>"Anyone with the link &rarr; Viewer"</b>.
-      Paste a different Sheet ID above to point this dashboard at another workbook.
-    </div>
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Product Mix</button>
+    <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
+    <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
+    <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
   </div>
 
-  <div class="filter-panel">
+  <div class="filter-panel" id="globalFilterPanel">
     <div class="filter-heading">
       <span>Sales Filters &mdash; applies across Overview, Product Mix &amp; Timing tabs</span>
       <button class="reset-link" onclick="resetSalesFilters()">Show All Months</button>
@@ -273,14 +297,6 @@
       </div>
     </div>
     <div class="result-note" id="salesResultNote"></div>
-  </div>
-
-  <div class="tab-nav" id="tabNav">
-    <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
-    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Product Mix</button>
-    <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
-    <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
-    <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
   </div>
 
   <div class="tab-content active" data-tab="overview" id="tab-overview">
@@ -749,12 +765,13 @@ function renderSalesKPIs(invoices, items){
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
 }
 
-function trendHTML(pct){
+function trendHTML(pct, compareLabel){
+  const label = compareLabel || 'vs best month';
   if(pct === null) return '<span class="trend-flat">No prior data</span>';
-  if(Math.abs(pct) < 0.5) return '<span class="trend-flat">&#9679; flat vs last month</span>';
+  if(Math.abs(pct) < 0.5) return `<span class="trend-flat">&#9679; matches ${label}</span>`;
   const dir = pct > 0 ? 'up' : 'down';
   const arrow = pct > 0 ? '&#9650;' : '&#9660;';
-  return `<span class="trend-${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% vs last month</span>`;
+  return `<span class="trend-${dir}">${arrow} ${Math.abs(pct).toFixed(0)}% ${label}</span>`;
 }
 
 function renderTrends(){
@@ -765,19 +782,24 @@ function renderTrends(){
     document.getElementById('trendProducts').innerHTML = '';
   } else {
     const latest = monthsPresent[monthsPresent.length-1];
-    const prev = monthsPresent[monthsPresent.length-2];
-    const latestInv = RAW.invoices.filter(r => r['Month']===latest);
-    const prevInv = RAW.invoices.filter(r => r['Month']===prev);
-    const latestTotal = latestInv.reduce((s,r)=>s+num(r['Paid']),0);
-    const prevTotal = prevInv.reduce((s,r)=>s+num(r['Paid']),0);
-    const latestItems = RAW.items.filter(r => r['Month']===latest);
-    const prevItems = RAW.items.filter(r => r['Month']===prev);
-    const latestQty = latestItems.reduce((s,r)=>s+num(r['Qty']),0);
-    const prevQty = prevItems.reduce((s,r)=>s+num(r['Qty']),0);
-    const salesPct = prevTotal > 0 ? ((latestTotal-prevTotal)/prevTotal)*100 : null;
-    const qtyPct = prevQty > 0 ? ((latestQty-prevQty)/prevQty)*100 : null;
-    document.getElementById('trendSales').innerHTML = trendHTML(salesPct);
-    document.getElementById('trendProducts').innerHTML = trendHTML(qtyPct);
+    const priorMonths = monthsPresent.slice(0, -1);
+
+    const latestTotal = RAW.invoices.filter(r => r['Month']===latest).reduce((s,r)=>s+num(r['Paid']),0);
+    const latestQty = RAW.items.filter(r => r['Month']===latest).reduce((s,r)=>s+num(r['Qty']),0);
+
+    let bestSalesMonth = null, bestSalesVal = -1;
+    let bestQtyMonth = null, bestQtyVal = -1;
+    priorMonths.forEach(m => {
+      const salesVal = RAW.invoices.filter(r => r['Month']===m).reduce((s,r)=>s+num(r['Paid']),0);
+      const qtyVal = RAW.items.filter(r => r['Month']===m).reduce((s,r)=>s+num(r['Qty']),0);
+      if(salesVal > bestSalesVal){ bestSalesVal = salesVal; bestSalesMonth = m; }
+      if(qtyVal > bestQtyVal){ bestQtyVal = qtyVal; bestQtyMonth = m; }
+    });
+
+    const salesPct = bestSalesVal > 0 ? ((latestTotal-bestSalesVal)/bestSalesVal)*100 : null;
+    const qtyPct = bestQtyVal > 0 ? ((latestQty-bestQtyVal)/bestQtyVal)*100 : null;
+    document.getElementById('trendSales').innerHTML = trendHTML(salesPct, bestSalesMonth ? `vs best month (${bestSalesMonth})` : null);
+    document.getElementById('trendProducts').innerHTML = trendHTML(qtyPct, bestQtyMonth ? `vs best month (${bestQtyMonth})` : null);
   }
 
   // Today vs same weekday last week
@@ -1059,6 +1081,13 @@ function renderRepeatSplit(){
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.tab===tab));
+
+  const filterPanel = document.getElementById('globalFilterPanel');
+  if(filterPanel){
+    const showOn = ['overview', 'productmix', 'timing'];
+    filterPanel.style.display = showOn.includes(tab) ? '' : 'none';
+  }
+
   setTimeout(() => {
     Object.values(charts).forEach(c => { try{ c.resize(); }catch(e){} });
   }, 50);
