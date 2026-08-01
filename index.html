@@ -41,25 +41,17 @@
     display:flex; align-items:baseline; justify-content:space-between; flex-wrap:wrap; gap:10px;
     max-width:1180px; margin:0 auto;
   }
-  .brand-title{
-    font-size:clamp(20px,3vw,26px);
-    font-weight:800;
-    letter-spacing:-0.01em;
-    color:var(--ink);
-  }
-  .brand-sub{
-    font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-top:2px;
-  }
+  .brand-title{ font-size:clamp(20px,3vw,26px); font-weight:800; letter-spacing:-0.01em; color:var(--ink); }
+  .brand-sub{ font-size:11.5px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-top:2px; }
   .stitch-line{
-    max-width:1180px; margin:12px auto 0; padding-top:12px;
-    border-top:1px solid var(--border);
+    max-width:1180px; margin:12px auto 0; padding-top:12px; border-top:1px solid var(--border);
     display:flex; gap:16px; flex-wrap:wrap; align-items:center; font-size:12.5px; color:var(--ink-soft);
   }
   .container{max-width:1180px; margin:0 auto; padding:24px 24px 60px;}
 
   .sheet-panel{
     background:var(--bg-soft); border:1px solid var(--border); border-radius:10px;
-    padding:14px 16px; margin-bottom:20px;
+    padding:14px 16px; margin-bottom:16px;
     display:flex; gap:10px; flex-wrap:wrap; align-items:center;
   }
   .sheet-panel input[type=text]{
@@ -76,6 +68,11 @@
   .status-ok{color:var(--green);}
   .status-err{color:var(--red);}
   .status-wait{color:var(--ink-soft);}
+  .print-btn{
+    background:#fff; color:var(--navy); border:1px solid var(--navy); padding:9px 16px; border-radius:8px;
+    font-family:inherit; font-weight:600; cursor:pointer; font-size:13px;
+  }
+  .print-btn:hover{background:var(--bg-soft);}
 
   .filter-panel{
     background:var(--bg); border:1px solid var(--border); border-radius:10px;
@@ -105,50 +102,23 @@
   .reset-link:hover{text-decoration:underline;}
   .result-note{font-size:12px; color:var(--ink-soft); margin-top:10px;}
 
-  .tags-row{
-    display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-    gap:14px; margin-bottom:28px;
+  .tab-nav{display:flex; gap:4px; margin:6px 0 22px; border-bottom:1px solid var(--border); flex-wrap:wrap;}
+  .tab-btn{
+    background:none; border:none; padding:11px 16px; font-family:inherit; font-size:13px; font-weight:600;
+    color:var(--ink-soft); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px;
   }
-  .tag{
-    background:var(--bg); border:1px solid var(--border); border-left:3px solid var(--navy); border-radius:10px;
-    padding:16px 18px;
-  }
+  .tab-btn:hover{color:var(--ink);}
+  .tab-btn.active{color:var(--navy); border-bottom-color:var(--navy);}
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  .tags-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:26px; }
+  .tag{ background:var(--bg); border:1px solid var(--border); border-left:3px solid var(--navy); border-radius:10px; padding:16px 18px; }
   .tag:nth-child(2){border-left-color:var(--slate);}
   .tag:nth-child(3){border-left-color:var(--green);}
   .tag:nth-child(4){border-left-color:var(--amber);}
   .tag-label{font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-soft); font-weight:600;}
   .tag-value{font-family:'IBM Plex Mono', monospace; font-size:24px; font-weight:600; color:var(--ink); margin-top:6px;}
-
-  .section-title{
-    display:flex; align-items:center; gap:10px; margin:36px 0 14px;
-  }
-  .section-title .num{
-    color:var(--ink-soft); font-weight:700; font-size:12px; font-family:'IBM Plex Mono',monospace;
-  }
-  .section-title h2{
-    font-size:15px; font-weight:700; letter-spacing:-0.01em; margin:0; color:var(--ink);
-  }
-  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:16px;}
-  .grid-2b{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
-  @media (max-width:820px){ .grid-2, .grid-2b{grid-template-columns:1fr;} }
-
-  .panel{
-    background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:18px;
-  }
-  .panel h3{
-    margin:0 0 14px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft);
-  }
-  canvas{max-height:280px;}
-
-  .table-wrap{overflow-x:auto;}
-  table{width:100%; border-collapse:collapse; font-size:13px; min-width:520px;}
-  th,td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); white-space:nowrap;}
-  th{text-transform:uppercase; font-size:10.5px; letter-spacing:0.04em; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--border);}
-  td.num-cell{font-family:'IBM Plex Mono', monospace;}
-  tr:hover td{background:var(--bg-soft);}
-  .empty-note{color:var(--ink-soft); font-style:italic; font-size:13px; padding:24px 0; text-align:center; white-space:normal;}
-
-
   .tag-trend{font-size:11px; font-weight:600; margin-top:6px;}
   .trend-up{color:var(--green);}
   .trend-down{color:var(--red);}
@@ -159,13 +129,41 @@
     .tag{padding:12px 14px;}
     .tag-value{font-size:19px;}
   }
-  @media (max-width:340px){
-    .tags-row{grid-template-columns:1fr;}
-  }
+  @media (max-width:340px){ .tags-row{grid-template-columns:1fr;} }
 
-  .alert-panel{
-    background:#fff7ed; border:1px solid #f3ceac; border-radius:10px; padding:16px 18px; margin-bottom:16px;
-  }
+  .section-title{ display:flex; align-items:center; gap:10px; margin:30px 0 14px; }
+  .section-title:first-child{margin-top:0;}
+  .section-title .num{ color:var(--ink-soft); font-weight:700; font-size:12px; font-family:'IBM Plex Mono',monospace; }
+  .section-title h2{ font-size:15px; font-weight:700; letter-spacing:-0.01em; margin:0; color:var(--ink); }
+  .grid-2{display:grid; grid-template-columns:1.4fr 1fr; gap:16px;}
+  .grid-2b{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:820px){ .grid-2, .grid-2b{grid-template-columns:1fr;} }
+
+  .panel{ background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:18px; margin-bottom:16px; }
+  .panel h3{ margin:0 0 14px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); }
+  canvas{max-height:280px;}
+
+  .table-wrap{overflow-x:auto;}
+  table{width:100%; border-collapse:collapse; font-size:13px; min-width:520px;}
+  th,td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); white-space:nowrap;}
+  th{text-transform:uppercase; font-size:10.5px; letter-spacing:0.04em; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--border);}
+  td.num-cell{font-family:'IBM Plex Mono', monospace;}
+  tr:hover td{background:var(--bg-soft);}
+  .empty-note{color:var(--ink-soft); font-style:italic; font-size:13px; padding:24px 0; text-align:center; white-space:normal;}
+
+  .mini-tags-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:16px;}
+  .mini-tag{background:var(--bg-soft); border:1px solid var(--border); border-radius:10px; padding:12px 14px;}
+  .mini-tag-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); font-weight:600;}
+  .mini-tag-value{font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:600; color:var(--ink); margin-top:4px;}
+
+  .heatmap-wrap{overflow-x:auto;}
+  .heatmap{border-collapse:collapse; font-size:10.5px; width:100%; min-width:640px;}
+  .heatmap th{padding:5px 4px; color:var(--ink-soft); font-weight:600; text-align:center;}
+  .heatmap td{padding:0; text-align:center;}
+  .heatmap td .cell{width:100%; height:26px; display:flex; align-items:center; justify-content:center; color:#fff; font-size:9.5px;}
+  .heatmap th.row-label, .heatmap td.row-label{text-align:left; padding:4px 8px; color:var(--ink-soft); font-weight:600; white-space:nowrap;}
+
+  .alert-panel{ background:#fff7ed; border:1px solid #f3ceac; border-radius:10px; padding:16px 18px; margin-bottom:16px; }
   .alert-panel.calm{background:var(--bg-soft); border-color:var(--border);}
   .alert-panel h3{margin:0 0 10px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--amber);}
   .alert-panel.calm h3{color:var(--ink-soft);}
@@ -173,6 +171,16 @@
   .alert-panel.calm .alert-item{border-bottom-color:var(--border);}
   .alert-item:last-child{border-bottom:none;}
   .alert-item b{font-family:'IBM Plex Mono',monospace;}
+
+  .bundle-item{font-size:13px; padding:7px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;}
+  .bundle-item:last-child{border-bottom:none;}
+  .bundle-count{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:12px;}
+
+  .search-panel{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+  .search-panel input{flex:1; min-width:220px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;}
+
+  .cust-name-link{color:var(--navy); font-weight:600; cursor:pointer; text-decoration:underline dotted;}
+  .cust-name-link:hover{color:var(--navy-deep);}
 
   .wa-btn{
     display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:#1f8a4c;
@@ -188,9 +196,21 @@
   .drilldown-close:hover{text-decoration:underline;}
   .hint-text{font-size:11.5px; color:var(--ink-soft); margin-top:8px; font-style:italic;}
 
-  footer{
-    text-align:center; font-size:12px; color:var(--ink-soft); padding:24px 0 40px;
+  .timeline-panel{display:none; margin-top:14px;}
+  .timeline-empty{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:10px 0;}
+
+  @media print{
+    .sheet-panel, .filter-panel, .tab-nav, .alert-panel, .month-chips, .drilldown-panel,
+    canvas, .search-panel, .timeline-panel, .tab-content { display:none !important; }
+    #printSummary{ display:block !important; }
+    body{background:#fff;}
   }
+  #printSummary{display:none;}
+  #printSummary h2{font-size:16px; margin:20px 0 8px;}
+  #printSummary table{width:100%; border-collapse:collapse; font-size:12px;}
+  #printSummary th, #printSummary td{border:1px solid #ccc; padding:6px 8px; text-align:left;}
+
+  footer{ text-align:center; font-size:12px; color:var(--ink-soft); padding:24px 0 40px; }
 </style>
 
 </head>
@@ -212,6 +232,7 @@
   <div class="sheet-panel">
     <input id="sheetId" type="text" value="1R7yvrGlo-c4W_ywKSWtKA34PJ_Omwby-gJGlzp_EycY" placeholder="Google Sheet ID">
     <button id="loadBtn" onclick="loadAll()">Refresh Ledger</button>
+    <button class="print-btn" onclick="preparePrintSummary()">Print Summary</button>
     <span id="status" class="status-wait">Not loaded yet</span>
     <div class="sheet-note">
       Data is pulled live from Google Sheets via a JSONP request (no server, no key, no CORS issues).
@@ -220,23 +241,10 @@
     </div>
   </div>
 
-  <div class="tags-row" id="kpiRow">
-    <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">&mdash;</div><div class="tag-trend" id="trendSales"></div></div>
-    <div class="tag"><div class="tag-label">Invoices Billed</div><div class="tag-value" id="kpiInvoices">&mdash;</div><div class="tag-trend" id="trendInvoices"></div></div>
-    <div class="tag"><div class="tag-label">Customers Matched</div><div class="tag-value" id="kpiCustomers">&mdash;</div></div>
-    <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div><div class="tag-trend" id="trendToday"></div></div>
-  </div>
-
-  <div class="alert-panel" id="callListPanel">
-    <h3>&#128222; Needs a Call Today</h3>
-    <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
-    <div class="hint-text">High Risk &amp; Attention Required customers, sorted by longest gap since last purchase. Independent of the filters below.</div>
-  </div>
-
   <div class="filter-panel">
     <div class="filter-heading">
-      <span>Sales Filters &mdash; controls charts in sections 01 &amp; 02</span>
-      <button class="reset-link" onclick="resetSalesFilters()">Reset</button>
+      <span>Sales Filters &mdash; applies across Overview, Product Mix &amp; Timing tabs</span>
+      <button class="reset-link" onclick="resetSalesFilters()">Show All Months</button>
     </div>
     <div class="filter-row">
       <div class="filter-field">
@@ -267,94 +275,178 @@
     <div class="result-note" id="salesResultNote"></div>
   </div>
 
-  <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
-  <div class="grid-2">
-    <div class="panel"><h3>Monthly Sales (&#8377;)</h3><canvas id="monthChart"></canvas></div>
-    <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Product Mix</button>
+    <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
+    <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
+    <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
   </div>
 
-  <div class="panel drilldown-panel" id="drilldownPanel">
-    <div class="drilldown-head">
-      <h3 id="drilldownTitle">Invoices for &mdash;</h3>
-      <button class="drilldown-close" onclick="closeDrilldown()">Close &times;</button>
+  <div class="tab-content active" data-tab="overview" id="tab-overview">
+    <div class="tags-row" id="kpiRow">
+      <div class="tag"><div class="tag-label">Total Sales</div><div class="tag-value" id="kpiSales">&mdash;</div><div class="tag-trend" id="trendSales"></div></div>
+      <div class="tag"><div class="tag-label">Total Products Count</div><div class="tag-value" id="kpiProducts">&mdash;</div><div class="tag-trend" id="trendProducts"></div></div>
+      <div class="tag"><div class="tag-label">Total Customer Unique</div><div class="tag-value" id="kpiCustomers">&mdash;</div></div>
+      <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div><div class="tag-trend" id="trendToday"></div></div>
     </div>
-    <div class="table-wrap">
-      <table id="drilldownTable">
-        <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
-        <tbody></tbody>
+
+    <div class="alert-panel" id="callListPanel">
+      <h3>&#128222; Needs a Call Today</h3>
+      <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">High Risk &amp; Attention Required customers, sorted by longest gap since last purchase. Independent of the filters above.</div>
+    </div>
+
+    <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
+    <div class="grid-2">
+      <div class="panel"><h3>Monthly Sales (&#8377;)</h3><canvas id="monthChart"></canvas></div>
+      <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
+    </div>
+
+    <div class="panel drilldown-panel" id="drilldownPanel">
+      <div class="drilldown-head">
+        <h3 id="drilldownTitle">Invoices for &mdash;</h3>
+        <button class="drilldown-close" onclick="closeDrilldown()">Close &times;</button>
+      </div>
+      <div class="table-wrap">
+        <table id="drilldownTable">
+          <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="hint-text">Tip: click any bar in the Monthly Sales chart to see that month's invoices.</div>
+  </div>
+
+  <div class="tab-content" data-tab="productmix" id="tab-productmix">
+    <div class="section-title"><span class="num">02</span><h2>Product Mix</h2></div>
+    <div class="grid-2b">
+      <div class="panel"><h3>Top Item Types by Revenue</h3><canvas id="itemChart"></canvas></div>
+      <div class="panel"><h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas></div>
+    </div>
+
+    <div class="alert-panel calm" id="slowMoverPanel">
+      <h3>&#128202; Item Trend Watch (vs. previous month)</h3>
+      <div id="slowMoverBody"><div class="alert-item">Loading&hellip;</div></div>
+    </div>
+
+    <div class="panel">
+      <h3>Frequently Bought Together</h3>
+      <div id="bundleBody"><div class="alert-item">Loading&hellip;</div></div>
+    </div>
+  </div>
+
+  <div class="tab-content" data-tab="timing" id="tab-timing">
+    <div class="section-title"><span class="num">03</span><h2>Sales Timing</h2></div>
+    <div class="grid-2b">
+      <div class="panel">
+        <h3>Which weekdays sell best</h3>
+        <canvas id="dowChart"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Peak Hours (revenue by hour &amp; weekday)</h3>
+        <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-content" data-tab="retention" id="tab-retention">
+    <div class="section-title"><span class="num">04</span><h2>Customer Retention</h2></div>
+
+    <div class="mini-tags-row" id="gapTagsRow">
+      <div class="mini-tag"><div class="mini-tag-label">Avg Gap &mdash; Wholesale</div><div class="mini-tag-value" id="gapWholesale">&mdash;</div></div>
+      <div class="mini-tag"><div class="mini-tag-label">Avg Gap &mdash; Retail</div><div class="mini-tag-value" id="gapRetail">&mdash;</div></div>
+      <div class="mini-tag"><div class="mini-tag-label">Repeat Rate &mdash; Wholesale</div><div class="mini-tag-value" id="repeatPctWholesale">&mdash;</div></div>
+      <div class="mini-tag"><div class="mini-tag-label">Repeat Rate &mdash; Retail</div><div class="mini-tag-value" id="repeatPctRetail">&mdash;</div></div>
+    </div>
+
+    <div class="grid-2b">
+      <div class="panel"><h3>Repeat vs One-Time &mdash; Wholesale</h3><canvas id="repeatChartWholesale"></canvas></div>
+      <div class="panel"><h3>Repeat vs One-Time &mdash; Retail</h3><canvas id="repeatChartRetail"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h3>First-Purchase Cohorts</h3>
+      <canvas id="cohortChart"></canvas>
+      <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice customer names.</div>
+    </div>
+  </div>
+
+  <div class="tab-content" data-tab="customers" id="tab-customers">
+    <div class="section-title"><span class="num">05</span><h2>Invoice Lookup</h2></div>
+    <div class="panel">
+      <div class="search-panel">
+        <input type="text" id="invoiceSearchInput" placeholder="Search by invoice number or customer name&hellip;" oninput="runInvoiceSearch()">
+      </div>
+      <div class="table-wrap">
+        <table id="invoiceSearchTable">
+          <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+          <tbody><tr><td colspan="6" class="empty-note">Type above to search across all invoices.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="num">06</span><h2>Customers</h2></div>
+
+    <div class="filter-panel">
+      <div class="filter-heading">
+        <span>Customer Filters &mdash; controls the table below</span>
+        <button class="reset-link" onclick="resetCustomerFilters()">Reset</button>
+      </div>
+      <div class="filter-row">
+        <div class="filter-field">
+          Customer Type
+          <select id="filterCustType">
+            <option value="All">All</option>
+            <option value="Wholesale">Wholesale</option>
+            <option value="Retail">Retail</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          Flag
+          <select id="filterFlag"><option value="All">All</option></select>
+        </div>
+        <div class="filter-field">
+          Search Name
+          <input type="text" id="filterSearch" placeholder="e.g. Sameer">
+        </div>
+        <div class="filter-field">
+          Sort By
+          <select id="filterSort">
+            <option value="sale_desc">Sale: High &rarr; Low</option>
+            <option value="sale_asc">Sale: Low &rarr; High</option>
+            <option value="gap_desc">Gap: High &rarr; Low</option>
+            <option value="gap_asc">Gap: Low &rarr; High</option>
+            <option value="name_asc">Name: A &rarr; Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="result-note" id="custResultNote"></div>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+      <table id="topCustTable">
+        <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
+        <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
-    </div>
-  </div>
-  <div class="hint-text" id="drilldownHint">Tip: click any bar in the Monthly Sales chart above to see that month's invoices.</div>
-
-  <div class="section-title"><span class="num">02</span><h2>Product Mix</h2></div>
-  <div class="grid-2b">
-    <div class="panel"><h3>Top Item Types by Revenue</h3><canvas id="itemChart"></canvas></div>
-    <div class="panel"><h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas></div>
-  </div>
-  <div class="alert-panel calm" id="slowMoverPanel">
-    <h3>&#128202; Item Trend Watch (vs. previous month)</h3>
-    <div id="slowMoverBody"><div class="alert-item">Loading&hellip;</div></div>
-  </div>
-
-
-  <div class="section-title"><span class="num">03</span><h2>Sales by Day of Week</h2></div>
-  <div class="panel">
-    <h3>Which weekdays sell best</h3>
-    <canvas id="dowChart"></canvas>
-  </div>
-
-  <div class="section-title"><span class="num">04</span><h2>Customer Retention</h2></div>
-  <div class="grid-2b">
-    <div class="panel"><h3>Retention Flags (Wholesale)</h3><canvas id="flagWholesaleChart"></canvas></div>
-    <div class="panel"><h3>Retention Flags (Retail)</h3><canvas id="flagRetailChart"></canvas></div>
-  </div>
-
-  <div class="section-title"><span class="num">05</span><h2>Customers</h2></div>
-
-  <div class="filter-panel">
-    <div class="filter-heading">
-      <span>Customer Filters &mdash; controls retention charts &amp; table below</span>
-      <button class="reset-link" onclick="resetCustomerFilters()">Reset</button>
-    </div>
-    <div class="filter-row">
-      <div class="filter-field">
-        Customer Type
-        <select id="filterCustType">
-          <option value="All">All</option>
-          <option value="Wholesale">Wholesale</option>
-          <option value="Retail">Retail</option>
-        </select>
       </div>
-      <div class="filter-field">
-        Flag
-        <select id="filterFlag"><option value="All">All</option></select>
-      </div>
-      <div class="filter-field">
-        Search Name
-        <input type="text" id="filterSearch" placeholder="e.g. Sameer">
-      </div>
-      <div class="filter-field">
-        Sort By
-        <select id="filterSort">
-          <option value="sale_desc">Sale: High &rarr; Low</option>
-          <option value="sale_asc">Sale: Low &rarr; High</option>
-          <option value="gap_desc">Gap: High &rarr; Low</option>
-          <option value="gap_asc">Gap: Low &rarr; High</option>
-          <option value="name_asc">Name: A &rarr; Z</option>
-        </select>
+      <div class="hint-text">Click a customer's name to see their purchase history.</div>
+
+      <div class="panel timeline-panel" id="timelinePanel" style="margin-top:14px;">
+        <div class="drilldown-head">
+          <h3 id="timelineTitle">Purchase history for &mdash;</h3>
+          <button class="drilldown-close" onclick="closeTimeline()">Close &times;</button>
+        </div>
+        <canvas id="timelineChart" height="90"></canvas>
+        <div id="timelineEmpty" class="timeline-empty" style="display:none;">No matching invoice history found for this name (name spelling may differ between the customer list and invoices).</div>
       </div>
     </div>
-    <div class="result-note" id="custResultNote"></div>
   </div>
 
-  <div class="panel">
-    <div class="table-wrap">
-    <table id="topCustTable">
-      <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
-      <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
-    </table>
-    </div>
+  <div id="printSummary">
+    <h2>Nusrat Enterprises &mdash; Summary</h2>
+    <div id="printSummaryBody"></div>
   </div>
 
   <footer>Nusrat Enterprises &amp; NE Street Wear</footer>
@@ -464,6 +556,10 @@ async function loadAll(){
     applyFilters();
     renderTrends();
     renderCallList();
+    renderRepeatSplit();
+    renderAvgGap();
+    renderCohortChart();
+    renderTotalUniqueCustomers();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
@@ -492,9 +588,10 @@ let activeMonths = new Set(); // empty = all
 function initFilters(){
   // Month chips
   const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
-  activeMonths = new Set(); // start with all months = no filter applied
+  const latestMonth = monthsPresent[monthsPresent.length-1];
+  activeMonths = latestMonth ? new Set([latestMonth]) : new Set(); // default to current/latest month only
   const chipWrap = document.getElementById('monthChips');
-  chipWrap.innerHTML = monthsPresent.map(m => `<span class="month-chip" data-month="${m}" onclick="toggleMonth('${m}')">${m.slice(0,3)}</span>`).join('');
+  chipWrap.innerHTML = monthsPresent.map(m => `<span class="month-chip${activeMonths.has(m) ? ' active' : ''}" data-month="${m}" onclick="toggleMonth('${m}')">${m.slice(0,3)}</span>`).join('');
 
   // Payment modes
   const payments = [...new Set(RAW.invoices.map(r => cleanPayment(r['Payment Mode'])).filter(Boolean))];
@@ -586,8 +683,10 @@ function applyFilters(){
   renderPaymentChart(filteredInvoices);
   renderDowChart(filteredInvoices);
   renderSlowMovers(filteredItems);
+  renderHeatmap(filteredInvoices);
+  renderBundles(filteredItems);
   renderDateRange(filteredInvoices);
-  renderSalesKPIs(filteredInvoices);
+  renderSalesKPIs(filteredInvoices, filteredItems);
 
   document.getElementById('salesResultNote').textContent =
     `Showing ${filteredInvoices.length} of ${RAW.invoices.length} invoices, ${filteredItems.length} of ${RAW.items.length} line items`;
@@ -609,8 +708,6 @@ function applyCustomerFilters(){
 
   const wholesaleForChart = (custType === 'Retail') ? [] : RAW.wholesale.filter(matches);
   const retailForChart = (custType === 'Wholesale') ? [] : RAW.retail.filter(matches);
-  renderFlagChart('flagWholesaleChart', wholesaleForChart);
-  renderFlagChart('flagRetailChart', retailForChart);
 
   let combined = [
     ...wholesaleForChart.map(r => ({...r, __type:'Wholesale'})),
@@ -627,7 +724,6 @@ function applyCustomerFilters(){
   });
 
   renderTopCustomers(combined);
-  renderCustomerKPI(combined.length);
 
   document.getElementById('custResultNote').textContent =
     `Showing ${combined.length} of ${RAW.wholesale.length + RAW.retail.length} customers`;
@@ -640,16 +736,16 @@ function renderDateRange(invoices){
   el.innerHTML = `<span>\ud83d\udccb Showing: ${dates[0]} \u2014 ${dates[dates.length-1]}</span><span>\u00b7</span><span>${invoices.length} invoices</span>`;
 }
 
-function renderSalesKPIs(invoices){
+function renderSalesKPIs(invoices, items){
   const totalSales = invoices.reduce((s,r) => s + num(r['Paid']), 0);
-  const invoiceCount = new Set(invoices.map(r => r['Invoice'])).size || invoices.length;
+  const totalProducts = items.reduce((s,r) => s + num(r['Qty']), 0);
   const today = new Date();
   const todaySales = invoices.reduce((s,r) => {
     const d = parseInvoiceDate(r['Date']);
     return isSameDay(d, today) ? s + num(r['Paid']) : s;
   }, 0);
   document.getElementById('kpiSales').textContent = fmtINR(totalSales);
-  document.getElementById('kpiInvoices').textContent = invoiceCount.toLocaleString('en-IN');
+  document.getElementById('kpiProducts').textContent = Math.round(totalProducts).toLocaleString('en-IN');
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
 }
 
@@ -666,7 +762,7 @@ function renderTrends(){
   const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
   if(monthsPresent.length < 2){
     document.getElementById('trendSales').innerHTML = '';
-    document.getElementById('trendInvoices').innerHTML = '';
+    document.getElementById('trendProducts').innerHTML = '';
   } else {
     const latest = monthsPresent[monthsPresent.length-1];
     const prev = monthsPresent[monthsPresent.length-2];
@@ -674,12 +770,14 @@ function renderTrends(){
     const prevInv = RAW.invoices.filter(r => r['Month']===prev);
     const latestTotal = latestInv.reduce((s,r)=>s+num(r['Paid']),0);
     const prevTotal = prevInv.reduce((s,r)=>s+num(r['Paid']),0);
-    const latestCount = new Set(latestInv.map(r=>r['Invoice'])).size;
-    const prevCount = new Set(prevInv.map(r=>r['Invoice'])).size;
+    const latestItems = RAW.items.filter(r => r['Month']===latest);
+    const prevItems = RAW.items.filter(r => r['Month']===prev);
+    const latestQty = latestItems.reduce((s,r)=>s+num(r['Qty']),0);
+    const prevQty = prevItems.reduce((s,r)=>s+num(r['Qty']),0);
     const salesPct = prevTotal > 0 ? ((latestTotal-prevTotal)/prevTotal)*100 : null;
-    const invPct = prevCount > 0 ? ((latestCount-prevCount)/prevCount)*100 : null;
+    const qtyPct = prevQty > 0 ? ((latestQty-prevQty)/prevQty)*100 : null;
     document.getElementById('trendSales').innerHTML = trendHTML(salesPct);
-    document.getElementById('trendInvoices').innerHTML = trendHTML(invPct);
+    document.getElementById('trendProducts').innerHTML = trendHTML(qtyPct);
   }
 
   // Today vs same weekday last week
@@ -703,8 +801,11 @@ function renderTrends(){
   }
 }
 
-function renderCustomerKPI(count){
-  document.getElementById('kpiCustomers').textContent = count.toLocaleString('en-IN');
+function renderTotalUniqueCustomers(){
+  const names = new Set();
+  RAW.wholesale.forEach(r => { const n = normName(r['Name']); if(n) names.add(n); });
+  RAW.retail.forEach(r => { const n = normName(r['Name']); if(n) names.add(n); });
+  document.getElementById('kpiCustomers').textContent = names.size.toLocaleString('en-IN');
 }
 
 function renderMonthChart(invoices){
@@ -801,7 +902,7 @@ function renderTopCustomers(list){
   const shown = list.slice(0,30);
   tbody.innerHTML = shown.map(r => `
     <tr>
-      <td>${r['Name'] || '—'}</td>
+      <td><span class="cust-name-link" onclick="showTimeline('${(r['Name']||'').replace(/'/g,"\\'")}')">${r['Name'] || '—'}</span></td>
       <td class="num-cell">${r['Phone'] || '—'}${waButton(r['Phone'], r['Name'])}</td>
       <td>${r.__type}</td>
       <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
@@ -914,6 +1015,257 @@ function showDrilldown(monthLabel, invoicesForMonth){
 }
 function closeDrilldown(){
   document.getElementById('drilldownPanel').style.display = 'none';
+}
+
+function normName(n){ return (n||'').toString().trim().toLowerCase(); }
+
+function repeatCountsFor(saleType){
+  const counts = {};
+  RAW.invoices
+    .filter(r => cleanSaleType(r['Sale Type']) === saleType)
+    .forEach(r => {
+      const n = normName(r['Customer']);
+      if(!n) return;
+      counts[n] = (counts[n]||0) + 1;
+    });
+  const names = Object.keys(counts);
+  const repeat = names.filter(n => counts[n] > 1).length;
+  const oneTime = names.length - repeat;
+  return { repeat, oneTime, total: names.length };
+}
+
+function renderRepeatSplit(){
+  const w = repeatCountsFor('Wholesale');
+  const r = repeatCountsFor('Retail');
+
+  document.getElementById('repeatPctWholesale').textContent = w.total ? Math.round((w.repeat/w.total)*100) + '%' : '\u2014';
+  document.getElementById('repeatPctRetail').textContent = r.total ? Math.round((r.repeat/r.total)*100) + '%' : '\u2014';
+
+  destroy('repeatChartWholesale');
+  charts.repeatChartWholesale = new Chart(document.getElementById('repeatChartWholesale'), {
+    type:'doughnut',
+    data:{ labels:['Repeat', 'One-Time'], datasets:[{ data:[w.repeat, w.oneTime], backgroundColor:['#1f3a5f','#c1652f'] }] },
+    options:{ responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+
+  destroy('repeatChartRetail');
+  charts.repeatChartRetail = new Chart(document.getElementById('repeatChartRetail'), {
+    type:'doughnut',
+    data:{ labels:['Repeat', 'One-Time'], datasets:[{ data:[r.repeat, r.oneTime], backgroundColor:['#1f3a5f','#c1652f'] }] },
+    options:{ responsive:true, plugins:{legend:{position:'bottom'}} }
+  });
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.tab===tab));
+  setTimeout(() => {
+    Object.values(charts).forEach(c => { try{ c.resize(); }catch(e){} });
+  }, 50);
+}
+
+function renderAvgGap(){
+  const avg = (list) => {
+    if(!list.length) return null;
+    return list.reduce((s,r) => s + num(r['Gap']), 0) / list.length;
+  };
+  const wAvg = avg(RAW.wholesale);
+  const rAvg = avg(RAW.retail);
+  document.getElementById('gapWholesale').textContent = wAvg===null ? '\u2014' : Math.round(wAvg) + 'd';
+  document.getElementById('gapRetail').textContent = rAvg===null ? '\u2014' : Math.round(rAvg) + 'd';
+}
+
+function renderCohortChart(){
+  const firstMonth = {};
+  const monthsSeen = {};
+  RAW.invoices.forEach(r => {
+    const n = normName(r['Customer']);
+    if(!n) return;
+    const m = r['Month'];
+    if(!m) return;
+    if(!monthsSeen[n]) monthsSeen[n] = new Set();
+    monthsSeen[n].add(m);
+    const idx = MONTH_ORDER.indexOf(m);
+    if(firstMonth[n]===undefined || idx < MONTH_ORDER.indexOf(firstMonth[n])) firstMonth[n] = m;
+  });
+
+  const monthsPresent = MONTH_ORDER.filter(m => Object.values(firstMonth).includes(m));
+  const cohortSize = monthsPresent.map(m => Object.keys(firstMonth).filter(n => firstMonth[n]===m).length);
+  const retained = monthsPresent.map(m => {
+    const cohortNames = Object.keys(firstMonth).filter(n => firstMonth[n]===m);
+    return cohortNames.filter(n => monthsSeen[n].size > 1).length;
+  });
+
+  destroy('cohortChart');
+  charts.cohortChart = new Chart(document.getElementById('cohortChart'), {
+    type:'bar',
+    data:{
+      labels: monthsPresent,
+      datasets:[
+        { label:'Cohort Size', data:cohortSize, backgroundColor:'#c8d3de' },
+        { label:'Bought Again Later', data:retained, backgroundColor:'#1f3a5f' },
+      ]
+    },
+    options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{ ticks:{ precision:0 } } } }
+  });
+}
+
+function parseHour(timeStr){
+  if(!timeStr) return null;
+  const m = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*([ap]m)?/i);
+  if(!m) return null;
+  let h = parseInt(m[1]);
+  const ampm = (m[3]||'').toLowerCase();
+  if(ampm === 'pm' && h !== 12) h += 12;
+  if(ampm === 'am' && h === 12) h = 0;
+  return h;
+}
+
+function renderHeatmap(invoices){
+  const grid = {}; // grid[dow][hour] = total
+  invoices.forEach(r => {
+    const d = parseInvoiceDate(r['Date']);
+    const h = parseHour(r['Time']);
+    if(d===null || h===null) return;
+    const dow = d.getDay();
+    grid[dow] = grid[dow] || {};
+    grid[dow][h] = (grid[dow][h]||0) + num(r['Paid']);
+  });
+
+  let maxVal = 0;
+  Object.values(grid).forEach(row => Object.values(row).forEach(v => { if(v>maxVal) maxVal = v; }));
+
+  const dowOrder = [1,2,3,4,5,6,0]; // Mon..Sun
+  const hours = Array.from({length:24}, (_,i)=>i);
+
+  let html = '<thead><tr><th class="row-label"></th>' + hours.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>';
+  dowOrder.forEach(dow => {
+    html += `<tr><td class="row-label">${DOW_LABELS[dow]}</td>`;
+    hours.forEach(h => {
+      const val = (grid[dow] && grid[dow][h]) || 0;
+      const intensity = maxVal ? val / maxVal : 0;
+      const alpha = 0.08 + intensity * 0.85;
+      const bg = `rgba(31,58,95,${alpha.toFixed(2)})`;
+      html += `<td><div class="cell" style="background:${bg}" title="${DOW_LABELS[dow]} ${h}:00 \u2014 ${fmtINR(val)}">${val ? '' : ''}</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('heatmapTable').innerHTML = html;
+}
+
+function renderBundles(items){
+  const byInvoice = {};
+  items.forEach(r => {
+    const inv = r['Invoice #'] || r['Invoice'];
+    if(!inv) return;
+    byInvoice[inv] = byInvoice[inv] || new Set();
+    byInvoice[inv].add(r['Type'] || 'Unknown');
+  });
+
+  const pairCounts = {};
+  Object.values(byInvoice).forEach(typeSet => {
+    const types = [...typeSet].sort();
+    for(let i=0;i<types.length;i++){
+      for(let j=i+1;j<types.length;j++){
+        const key = `${types[i]} + ${types[j]}`;
+        pairCounts[key] = (pairCounts[key]||0) + 1;
+      }
+    }
+  });
+
+  const sorted = Object.entries(pairCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const body = document.getElementById('bundleBody');
+  if(!sorted.length){
+    body.innerHTML = '<div class="alert-item">Not enough multi-item invoices to detect patterns yet.</div>';
+    return;
+  }
+  body.innerHTML = sorted.map(([pair,count]) => `
+    <div class="bundle-item"><span>${pair}</span><span class="bundle-count">${count} invoices</span></div>
+  `).join('');
+}
+
+function runInvoiceSearch(){
+  const q = document.getElementById('invoiceSearchInput').value.trim().toLowerCase();
+  const tbody = document.querySelector('#invoiceSearchTable tbody');
+  if(!q){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">Type above to search across all invoices.</td></tr>';
+    return;
+  }
+  const matches = RAW.invoices.filter(r =>
+    (r['Invoice']||'').toLowerCase().includes(q) || (r['Customer']||'').toLowerCase().includes(q)
+  ).slice(0,50);
+  if(!matches.length){
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No invoices match &ldquo;' + q + '&rdquo;.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = matches.map(r => `
+    <tr>
+      <td>${r['Invoice']||'\u2014'}</td>
+      <td>${r['Customer']||'\u2014'}</td>
+      <td>${r['Date']||'\u2014'}</td>
+      <td>${cleanSaleType(r['Sale Type'])}</td>
+      <td>${cleanPayment(r['Payment Mode'])}</td>
+      <td class="num-cell">${fmtINR(num(r['Paid']))}</td>
+    </tr>
+  `).join('');
+}
+
+function showTimeline(name){
+  const n = normName(name);
+  const matches = RAW.invoices
+    .filter(r => normName(r['Customer']) === n)
+    .filter(r => parseInvoiceDate(r['Date']))
+    .sort((a,b) => parseInvoiceDate(a['Date']) - parseInvoiceDate(b['Date']));
+
+  document.getElementById('timelineTitle').textContent = `Purchase history for ${name}`;
+  document.getElementById('timelinePanel').style.display = 'block';
+  const emptyEl = document.getElementById('timelineEmpty');
+  const canvasEl = document.getElementById('timelineChart');
+
+  if(!matches.length){
+    emptyEl.style.display = 'block';
+    canvasEl.style.display = 'none';
+    return;
+  }
+  emptyEl.style.display = 'none';
+  canvasEl.style.display = 'block';
+
+  destroy('timelineChart');
+  charts.timelineChart = new Chart(canvasEl, {
+    type:'line',
+    data:{
+      labels: matches.map(r => r['Date']),
+      datasets:[{ label:'Paid (\u20b9)', data: matches.map(r => num(r['Paid'])), borderColor:'#1f3a5f', backgroundColor:'rgba(31,58,95,0.1)', tension:0.2, fill:true, pointRadius:3 }]
+    },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } } } }
+  });
+}
+function closeTimeline(){
+  document.getElementById('timelinePanel').style.display = 'none';
+}
+
+function preparePrintSummary(){
+  const totalSales = RAW.invoices.reduce((s,r)=>s+num(r['Paid']),0);
+  const invoiceCount = new Set(RAW.invoices.map(r=>r['Invoice'])).size;
+  const custCount = RAW.wholesale.length + RAW.retail.length;
+  const topCust = [
+    ...RAW.wholesale.map(r=>({...r,__type:'Wholesale'})),
+    ...RAW.retail.map(r=>({...r,__type:'Retail'})),
+  ].sort((a,b)=>num(b['Sale'])-num(a['Sale'])).slice(0,10);
+
+  let html = `
+    <p><b>Total Sales:</b> ${fmtINR(totalSales)} &nbsp; <b>Invoices:</b> ${invoiceCount} &nbsp; <b>Customers:</b> ${custCount}</p>
+    <h2>Top 10 Customers</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Type</th><th>Lifetime Sale</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
+      <tbody>
+        ${topCust.map(r => `<tr><td>${r['Name']||''}</td><td>${r.__type}</td><td>${fmtINR(num(r['Sale']))}</td><td>${r['Last Purchase Date']||r['Last_purchase_date']||''}</td><td>${r['Gap']||''}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+  document.getElementById('printSummaryBody').innerHTML = html;
+  setTimeout(() => window.print(), 200);
 }
 </script>
 
