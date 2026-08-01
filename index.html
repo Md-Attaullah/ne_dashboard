@@ -87,12 +87,6 @@
   .status-ok{color:var(--green);}
   .status-err{color:var(--red);}
   .status-wait{color:var(--ink-soft);}
-  .print-btn{
-    background:#fff; color:var(--navy); border:1px solid var(--navy); padding:9px 16px; border-radius:8px;
-    font-family:inherit; font-weight:600; cursor:pointer; font-size:13px;
-  }
-  .print-btn:hover{background:var(--bg-soft);}
-
   .filter-panel{
     background:var(--bg); border:1px solid var(--border); border-radius:10px;
     padding:14px 18px; margin-bottom:16px;
@@ -231,17 +225,6 @@
   .timeline-panel{display:none; margin-top:14px;}
   .timeline-empty{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:10px 0;}
 
-  @media print{
-    .sheet-panel, .filter-panel, .tab-nav, .alert-panel, .month-chips, .drilldown-panel,
-    canvas, .search-panel, .timeline-panel, .tab-content { display:none !important; }
-    #printSummary{ display:block !important; }
-    body{background:#fff;}
-  }
-  #printSummary{display:none;}
-  #printSummary h2{font-size:16px; margin:20px 0 8px;}
-  #printSummary table{width:100%; border-collapse:collapse; font-size:12px;}
-  #printSummary th, #printSummary td{border:1px solid #ccc; padding:6px 8px; text-align:left;}
-
   footer{ text-align:center; font-size:12px; color:var(--ink-soft); padding:24px 0 40px; }
 
   [data-theme="dark"]{
@@ -299,7 +282,6 @@
     <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">&#127769; Dark</button>
     <input id="sheetId" type="text" value="1R7yvrGlo-c4W_ywKSWtKA34PJ_Omwby-gJGlzp_EycY" placeholder="Sheet ID" class="toolbar-input" title="Google Sheet ID -- must be shared as Anyone with the link, Viewer">
     <button class="toolbar-btn" id="loadBtn" onclick="loadAll()" title="Pull latest data from the sheet">&#8635; Refresh</button>
-    <button class="toolbar-btn ghost" onclick="preparePrintSummary()" title="Print a one-page summary">Print</button>
   </div>
   <div id="status" class="status-wait toolbar-status">Not loaded yet</div>
 
@@ -312,10 +294,10 @@
 
   <div class="tab-nav" id="tabNav">
     <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
-    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Product</button>
+    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Product Mix</button>
+    <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
     <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
     <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
-    <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
   </div>
 
   <div class="filter-panel" id="globalFilterPanel">
@@ -391,7 +373,7 @@
   </div>
 
   <div class="tab-content" data-tab="productmix" id="tab-productmix">
-    <div class="section-title"><span class="num">02</span><h2>Product Details</h2></div>
+    <div class="section-title"><span class="num">02</span><h2>Product Mix</h2></div>
     <div class="grid-2b">
       <div class="panel"><h3>Top Item Types by Revenue</h3><div class="chart-box"><canvas id="itemChart"></canvas></div></div>
       <div class="panel"><h3>Top Item Types by Count</h3><div class="chart-box"><canvas id="itemCountChart"></canvas></div></div>
@@ -526,11 +508,6 @@
         <div id="timelineEmpty" class="timeline-empty" style="display:none;">No matching invoice history found for this name (name spelling may differ between the customer list and invoices).</div>
       </div>
     </div>
-  </div>
-
-  <div id="printSummary">
-    <h2>Nusrat Enterprises &mdash; Summary</h2>
-    <div id="printSummaryBody"></div>
   </div>
 
   <footer>Nusrat Enterprises &amp; NE Street Wear</footer>
@@ -1467,28 +1444,6 @@ function toggleTheme(){
   }
 }
 
-function preparePrintSummary(){
-  const totalSales = RAW.invoices.reduce((s,r)=>s+num(r['Paid']),0);
-  const invoiceCount = new Set(RAW.invoices.map(r=>r['Invoice'])).size;
-  const custCount = RAW.wholesale.length + RAW.retail.length;
-  const topCust = [
-    ...RAW.wholesale.map(r=>({...r,__type:'Wholesale'})),
-    ...RAW.retail.map(r=>({...r,__type:'Retail'})),
-  ].sort((a,b)=>num(b['Sale'])-num(a['Sale'])).slice(0,10);
-
-  let html = `
-    <p><b>Total Sales:</b> ${fmtINR(totalSales)} &nbsp; <b>Invoices:</b> ${invoiceCount} &nbsp; <b>Customers:</b> ${custCount}</p>
-    <h2>Top 10 Customers</h2>
-    <table>
-      <thead><tr><th>Name</th><th>Type</th><th>Lifetime Sale</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
-      <tbody>
-        ${topCust.map(r => `<tr><td>${r['Name']||''}</td><td>${r.__type}</td><td>${fmtINR(num(r['Sale']))}</td><td>${r['Last Purchase Date']||r['Last_purchase_date']||''}</td><td>${r['Gap']||''}</td></tr>`).join('')}
-      </tbody>
-    </table>
-  `;
-  document.getElementById('printSummaryBody').innerHTML = html;
-  setTimeout(() => window.print(), 200);
-}
 </script>
 
 loadAll();
