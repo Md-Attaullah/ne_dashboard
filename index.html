@@ -95,11 +95,22 @@
 
   .filter-panel{
     background:var(--bg); border:1px solid var(--border); border-radius:10px;
-    padding:16px 18px; margin-bottom:16px;
+    padding:14px 18px; margin-bottom:16px;
   }
   .filter-panel .filter-heading{
-    font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft); margin-bottom:12px;
-    display:flex; justify-content:space-between; align-items:center; font-weight:600;
+    font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft);
+    display:flex; justify-content:space-between; align-items:center; font-weight:600; cursor:pointer;
+  }
+  .chevron{ display:inline-block; margin-left:6px; font-size:9px; transition:transform 0.2s ease; }
+  .chevron.expanded{ transform:rotate(180deg); }
+  .filter-summary{
+    font-size:12px; color:var(--ink-soft); margin-top:6px; text-transform:none; letter-spacing:0; font-weight:400;
+  }
+  .filter-body{
+    max-height:0; overflow:hidden; transition:max-height 0.25s ease;
+  }
+  .filter-body:not(.collapsed){
+    max-height:600px; margin-top:14px;
   }
   .filter-row{display:flex; gap:18px; flex-wrap:wrap; align-items:flex-end;}
   .filter-field{display:flex; flex-direction:column; gap:5px; font-size:11px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; font-weight:600;}
@@ -266,10 +277,12 @@
   </div>
 
   <div class="filter-panel" id="globalFilterPanel">
-    <div class="filter-heading">
-      <span>Sales Filters &mdash; applies across Overview, Product Mix &amp; Timing tabs</span>
-      <button class="reset-link" onclick="resetSalesFilters()">Show All Months</button>
+    <div class="filter-heading" onclick="toggleFilterPanel('salesFilterBody','salesChevron')">
+      <span>Sales Filters <span class="chevron" id="salesChevron">&#9660;</span></span>
+      <button class="reset-link" onclick="event.stopPropagation(); resetSalesFilters()">Show All Months</button>
     </div>
+    <div class="filter-summary" id="salesFilterSummary">Loading&hellip;</div>
+    <div class="filter-body collapsed" id="salesFilterBody">
     <div class="filter-row">
       <div class="filter-field">
         Month
@@ -297,6 +310,7 @@
       </div>
     </div>
     <div class="result-note" id="salesResultNote"></div>
+    </div>
   </div>
 
   <div class="tab-content active" data-tab="overview" id="tab-overview">
@@ -405,10 +419,12 @@
     <div class="section-title"><span class="num">06</span><h2>Customers</h2></div>
 
     <div class="filter-panel">
-      <div class="filter-heading">
-        <span>Customer Filters &mdash; controls the table below</span>
-        <button class="reset-link" onclick="resetCustomerFilters()">Reset</button>
+      <div class="filter-heading" onclick="toggleFilterPanel('custFilterBody','custChevron')">
+        <span>Customer Filters <span class="chevron" id="custChevron">&#9660;</span></span>
+        <button class="reset-link" onclick="event.stopPropagation(); resetCustomerFilters()">Reset</button>
       </div>
+      <div class="filter-summary" id="custFilterSummary">Loading&hellip;</div>
+      <div class="filter-body collapsed" id="custFilterBody">
       <div class="filter-row">
         <div class="filter-field">
           Customer Type
@@ -438,6 +454,7 @@
         </div>
       </div>
       <div class="result-note" id="custResultNote"></div>
+      </div>
     </div>
 
     <div class="panel">
@@ -707,6 +724,13 @@ function applyFilters(){
   document.getElementById('salesResultNote').textContent =
     `Showing ${filteredInvoices.length} of ${RAW.invoices.length} invoices, ${filteredItems.length} of ${RAW.items.length} line items`;
 
+  const monthLabel = activeMonths.size ? [...activeMonths].map(m=>m.slice(0,3)).join(', ') : 'All months';
+  const summaryParts = [monthLabel];
+  if(saleType !== 'All') summaryParts.push(saleType);
+  if(payment !== 'All') summaryParts.push(payment);
+  if(fromVal || toVal) summaryParts.push(`${fromVal||'\u2026'} \u2192 ${toVal||'\u2026'}`);
+  document.getElementById('salesFilterSummary').textContent = summaryParts.join(' \u00b7 ');
+
   applyCustomerFilters();
 }
 
@@ -743,6 +767,12 @@ function applyCustomerFilters(){
 
   document.getElementById('custResultNote').textContent =
     `Showing ${combined.length} of ${RAW.wholesale.length + RAW.retail.length} customers`;
+
+  const custSummaryParts = [];
+  custSummaryParts.push(custType === 'All' ? 'All types' : custType);
+  if(flag !== 'All') custSummaryParts.push(flag);
+  if(search) custSummaryParts.push(`\u201c${search}\u201d`);
+  document.getElementById('custFilterSummary').textContent = custSummaryParts.join(' \u00b7 ');
 }
 
 function renderDateRange(invoices){
@@ -1091,6 +1121,14 @@ function switchTab(tab){
   setTimeout(() => {
     Object.values(charts).forEach(c => { try{ c.resize(); }catch(e){} });
   }, 50);
+}
+
+function toggleFilterPanel(bodyId, chevronId){
+  const body = document.getElementById(bodyId);
+  const chevron = document.getElementById(chevronId);
+  if(!body) return;
+  body.classList.toggle('collapsed');
+  if(chevron) chevron.classList.toggle('expanded');
 }
 
 function renderAvgGap(){
