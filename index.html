@@ -241,6 +241,32 @@
   #printSummary th, #printSummary td{border:1px solid #ccc; padding:6px 8px; text-align:left;}
 
   footer{ text-align:center; font-size:12px; color:var(--ink-soft); padding:24px 0 40px; }
+
+  [data-theme="dark"]{
+    --bg:#12151b;
+    --bg-soft:#1a1f27;
+    --border:#2a323d;
+    --ink:#e7eaef;
+    --ink-soft:#9aa4b2;
+    --navy:#5b8dd9;
+    --navy-deep:#7fa6e6;
+    --amber:#e0904f;
+    --slate:#7f97b3;
+    --green:#4caf7d;
+    --red:#e0685a;
+  }
+  [data-theme="dark"] body{ background:var(--bg); }
+  [data-theme="dark"] .alert-panel{ background:#2a2115; border-color:#4a3820; }
+  [data-theme="dark"] .alert-panel h3{ color:var(--amber); }
+  [data-theme="dark"] .wa-btn{ background:#132a1c; border-color:#2c5c3d; color:#6fcf97; }
+  [data-theme="dark"] .toolbar-btn.ghost{ background:var(--bg); }
+  body{ transition: background 0.2s ease, color 0.2s ease; }
+
+  .theme-toggle-btn{
+    background:none; border:1px solid var(--border); color:var(--ink-soft); padding:7px 12px; border-radius:7px;
+    font-family:inherit; font-weight:600; cursor:pointer; font-size:12.5px; white-space:nowrap;
+  }
+  .theme-toggle-btn:hover{background:var(--bg-soft);}
 </style>
 
 </head>
@@ -255,6 +281,7 @@
     <div class="header-toolbar">
 
   <div class="toolbar-row">
+    <button class="theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">&#127769; Dark</button>
     <input id="sheetId" type="text" value="1R7yvrGlo-c4W_ywKSWtKA34PJ_Omwby-gJGlzp_EycY" placeholder="Sheet ID" class="toolbar-input" title="Google Sheet ID -- must be shared as Anyone with the link, Viewer">
     <button class="toolbar-btn" id="loadBtn" onclick="loadAll()" title="Pull latest data from the sheet">&#8635; Refresh</button>
     <button class="toolbar-btn ghost" onclick="preparePrintSummary()" title="Print a one-page summary">Print</button>
@@ -352,7 +379,10 @@
     <div class="section-title"><span class="num">02</span><h2>Product Mix</h2></div>
     <div class="grid-2b">
       <div class="panel"><h3>Top Item Types by Revenue</h3><canvas id="itemChart"></canvas></div>
-      <div class="panel"><h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas></div>
+      <div class="panel"><h3>Top Item Types by Count</h3><canvas id="itemCountChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas>
     </div>
 
     <div class="alert-panel calm" id="slowMoverPanel">
@@ -399,6 +429,12 @@
       <h3>First-Purchase Cohorts</h3>
       <canvas id="cohortChart"></canvas>
       <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice customer names.</div>
+    </div>
+
+    <div class="panel">
+      <h3>New Customers vs At-Risk Customers, by Month</h3>
+      <canvas id="churnChart"></canvas>
+      <div class="hint-text">"At-risk" here means 60+ days since last purchase as of that month\'s end &mdash; an estimate from invoice history, independent of the Flag column (which uses different thresholds per customer type).</div>
     </div>
   </div>
 
@@ -592,6 +628,7 @@ async function loadAll(){
     renderRepeatSplit();
     renderAvgGap();
     renderCohortChart();
+    renderChurnAcquisitionTrend();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
@@ -712,6 +749,7 @@ function applyFilters(){
   renderMonthChart(filteredInvoices);
   renderTypeChart(filteredInvoices);
   renderItemChart(filteredItems);
+  renderItemCountChart(filteredItems);
   renderPaymentChart(filteredInvoices);
   renderDowChart(filteredInvoices);
   renderSlowMovers(filteredItems);
@@ -908,6 +946,21 @@ function renderItemChart(items){
     type:'bar',
     data:{ labels: sorted.map(x=>x[0]), datasets:[{ label:'Revenue (\u20b9)', data: sorted.map(x=>x[1]), backgroundColor:'#d99a2b' }] },
     options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}} }
+  });
+}
+
+function renderItemCountChart(items){
+  const byItem = {};
+  items.forEach(r => {
+    const t = r['Type'] || 'Unknown';
+    byItem[t] = (byItem[t]||0) + num(r['Qty']);
+  });
+  const sorted = Object.entries(byItem).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  destroy('itemCountChart');
+  charts.itemCountChart = new Chart(document.getElementById('itemCountChart'), {
+    type:'bar',
+    data:{ labels: sorted.map(x=>x[0]), datasets:[{ label:'Units Sold', data: sorted.map(x=>x[1]), backgroundColor:'#5b7290' }] },
+    options:{ indexAxis:'y', responsive:true, plugins:{legend:{display:false}}, scales:{ x:{ ticks:{ precision:0 } } } }
   });
 }
 
@@ -1171,6 +1224,67 @@ function renderCohortChart(){
   });
 }
 
+function renderChurnAcquisitionTrend(){
+  // Build per-customer sorted purchase date lists from invoice history
+  const purchaseDates = {};
+  RAW.invoices.forEach(r => {
+    const n = normName(r['Customer']);
+    const d = parseInvoiceDate(r['Date']);
+    if(!n || !d) return;
+    (purchaseDates[n] = purchaseDates[n] || []).push(d);
+  });
+  Object.values(purchaseDates).forEach(arr => arr.sort((a,b)=>a-b));
+
+  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  if(!monthsPresent.length){ destroy('churnChart'); return; }
+
+  // Figure out which calendar year each month label corresponds to
+  const yearForMonth = {};
+  RAW.invoices.forEach(r => {
+    const d = parseInvoiceDate(r['Date']);
+    if(d && r['Month'] && !(r['Month'] in yearForMonth)) yearForMonth[r['Month']] = d.getFullYear();
+  });
+
+  const newCounts = [];
+  const atRiskCounts = [];
+  const allNames = Object.keys(purchaseDates);
+
+  monthsPresent.forEach(m => {
+    const year = yearForMonth[m] !== undefined ? yearForMonth[m] : new Date().getFullYear();
+    const monthIdx = MONTH_ORDER.indexOf(m);
+    const monthEnd = new Date(year, monthIdx + 1, 0);
+
+    let newCount = 0;
+    let atRisk = 0;
+    allNames.forEach(n => {
+      const dates = purchaseDates[n];
+      const first = dates[0];
+      if(first.getFullYear() === year && first.getMonth() === monthIdx) newCount++;
+
+      const upToMonth = dates.filter(d => d <= monthEnd);
+      if(!upToMonth.length) return;
+      const last = upToMonth[upToMonth.length - 1];
+      const gapDays = Math.round((monthEnd - last) / (1000*60*60*24));
+      if(gapDays > 60) atRisk++;
+    });
+    newCounts.push(newCount);
+    atRiskCounts.push(atRisk);
+  });
+
+  destroy('churnChart');
+  charts.churnChart = new Chart(document.getElementById('churnChart'), {
+    type:'line',
+    data:{
+      labels: monthsPresent,
+      datasets:[
+        { label:'New Customers', data:newCounts, borderColor:'#2f8f5b', backgroundColor:'rgba(47,143,91,0.12)', tension:0.2, fill:true },
+        { label:'At-Risk (60+ days)', data:atRiskCounts, borderColor:'#c1432f', backgroundColor:'rgba(193,67,47,0.08)', tension:0.2, fill:true },
+      ]
+    },
+    options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{ ticks:{ precision:0 } } } }
+  });
+}
+
 function parseHour(timeStr){
   if(!timeStr) return null;
   const m = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*([ap]m)?/i);
@@ -1304,6 +1418,28 @@ function showTimeline(name){
 }
 function closeTimeline(){
   document.getElementById('timelinePanel').style.display = 'none';
+}
+
+function toggleTheme(){
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const next = isDark ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+
+  Chart.defaults.color = next === 'dark' ? '#9aa4b2' : '#67707d';
+  Chart.defaults.borderColor = next === 'dark' ? '#2a323d' : '#e4e7ec';
+
+  const btn = document.getElementById('themeToggleBtn');
+  if(btn) btn.innerHTML = next === 'dark' ? '&#9728;&#65039; Light' : '&#127769; Dark';
+
+  // Recreate charts so they pick up the new default colors
+  if(RAW.invoices.length || RAW.items.length){
+    applyFilters();
+    renderTrends();
+    renderAvgGap();
+    renderRepeatSplit();
+    renderCohortChart();
+    renderChurnAcquisitionTrend();
+  }
 }
 
 function preparePrintSummary(){
