@@ -171,6 +171,11 @@
   .chart-box{ position:relative; width:100%; height:280px; }
   .chart-box canvas{ max-height:none; }
 
+  .dom-readout{
+    font-size:12.5px; font-weight:600; color:var(--navy); margin-bottom:10px;
+    background:var(--bg-soft); border:1px solid var(--border); border-radius:8px; padding:8px 12px;
+  }
+  .dom-bar-col.active .dom-bar{ background:var(--navy); }
   .dom-chart-outer{ display:flex; align-items:stretch; gap:6px; }
   .dom-yaxis{
     display:flex; flex-direction:column; justify-content:space-between;
@@ -332,6 +337,7 @@
     <button class="tab-btn" data-tab="alerts" onclick="switchTab('alerts')">Alerts</button>
     <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Products Details</button>
     <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
+    <button class="tab-btn" data-tab="invoices" onclick="switchTab('invoices')">Invoices</button>
     <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
     <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
     <button class="tab-btn" data-tab="compare" onclick="switchTab('compare')">Compare</button>
@@ -395,7 +401,7 @@
       </div>
       <div class="table-wrap">
         <table id="drilldownTable">
-          <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+          <thead><tr><th>#</th><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>
@@ -471,20 +477,22 @@
 
   </div>
 
-  <div class="tab-content" data-tab="customers" id="tab-customers">
-    <div class="section-title"><span class="num">05</span><h2>Invoice Lookup</h2></div>
+  <div class="tab-content" data-tab="invoices" id="tab-invoices">
+    <div class="section-title"><span class="num">&#128269;</span><h2>Invoice Lookup</h2></div>
     <div class="panel">
       <div class="search-panel">
         <input type="text" id="invoiceSearchInput" placeholder="Search by invoice number or customer name&hellip;" oninput="runInvoiceSearch()">
       </div>
       <div class="table-wrap">
         <table id="invoiceSearchTable">
-          <thead><tr><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
-          <tbody><tr><td colspan="6" class="empty-note">Type above to search across all invoices.</td></tr></tbody>
+          <thead><tr><th>#</th><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+          <tbody><tr><td colspan="7" class="empty-note">Type above to search across all invoices.</td></tr></tbody>
         </table>
       </div>
     </div>
+  </div>
 
+  <div class="tab-content" data-tab="customers" id="tab-customers">
     <div class="section-title"><span class="num">06</span><h2>Customers</h2></div>
 
     <div class="filter-panel">
@@ -529,8 +537,8 @@
     <div class="panel">
       <div class="table-wrap">
       <table id="topCustTable">
-        <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
-        <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
+        <tbody><tr><td colspan="7" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
       </div>
       <div class="hint-text">Click a customer's name to see their purchase history.</div>
@@ -561,11 +569,12 @@
 
     <div class="panel">
       <h3>Sales by Day of the Month</h3>
+      <div class="dom-readout" id="domReadout">Tap any bar to see the exact amount for that day.</div>
       <div class="dom-chart-outer">
         <div class="dom-yaxis" id="domYAxis"></div>
         <div class="dom-scroll"><div class="dom-chart-wrap" id="domBars"></div></div>
       </div>
-      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end). Swipe sideways on mobile to see all days; tap a bar for the exact amount.</div>
+      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end). Swipe sideways on mobile to see all days.</div>
     </div>
   </div>
 
@@ -588,8 +597,8 @@
     <div class="panel">
       <div class="table-wrap">
         <table id="compareTable">
-          <thead><tr><th>Metric</th><th id="compareHeadA">Period A</th><th id="compareHeadB">Period B</th><th>Change</th></tr></thead>
-          <tbody><tr><td colspan="4" class="empty-note">Pick two months above to compare.</td></tr></tbody>
+          <thead><tr><th>#</th><th>Metric</th><th id="compareHeadA">Period A</th><th id="compareHeadB">Period B</th><th>Change</th></tr></thead>
+          <tbody><tr><td colspan="5" class="empty-note">Pick two months above to compare.</td></tr></tbody>
         </table>
       </div>
       <div class="hint-text">Compares full calendar months, independent of the Sales Filters on other tabs.</div>
@@ -1108,14 +1117,15 @@ function renderFlagChart(canvasId, list){
 function renderTopCustomers(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No customers match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
   const shown = list.slice(0,30);
-  tbody.innerHTML = shown.map(r => {
+  tbody.innerHTML = shown.map((r, i) => {
     const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
     return `
     <tr>
+      <td class="num-cell">${i+1}</td>
       <td><span class="cust-name-link" onclick="showTimeline('${nameEsc}')">${r['Name'] || '—'}</span></td>
       <td class="num-cell">${r['Phone'] || '—'}${waButton(r['Phone'], r['Name'])}</td>
       <td>${r.__type}</td>
@@ -1124,7 +1134,7 @@ function renderTopCustomers(list){
       <td class="num-cell">${r['Gap'] || '—'}</td>
     </tr>
   `;
-  }).join('') + (list.length > 30 ? `<tr><td colspan="6" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+  }).join('') + (list.length > 30 ? `<tr><td colspan="7" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
 }
 
 function renderCallList(){
@@ -1252,18 +1262,26 @@ function renderDomChart(invoices){
 
   wrap.innerHTML = gridlinesHtml + byDay.map((val, i) => {
     const pct = val > 0 ? Math.max(3, (val / niceMax) * 100) : 0;
-    return `<div class="dom-bar-col" title="Day ${i+1}: ${fmtINR(val)}">
+    return `<div class="dom-bar-col" onclick="showDomValue(${i+1}, ${val})">
       <div class="dom-bar" style="height:${pct}%"></div>
       <div class="dom-bar-label">${i+1}</div>
     </div>`;
   }).join('');
 }
 
+function showDomValue(day, val){
+  document.getElementById('domReadout').textContent = `Day ${day}: ${fmtINR(val)}`;
+  document.querySelectorAll('.dom-bar-col').forEach(el => el.classList.remove('active'));
+  const cols = document.querySelectorAll('.dom-bar-col');
+  if(cols[day-1]) cols[day-1].classList.add('active');
+}
+
 function showDrilldown(monthLabel, invoicesForMonth){
   document.getElementById('drilldownTitle').textContent = `Invoices for ${monthLabel} (${invoicesForMonth.length})`;
   const tbody = document.querySelector('#drilldownTable tbody');
-  tbody.innerHTML = invoicesForMonth.slice(0,100).map(r => `
+  tbody.innerHTML = invoicesForMonth.slice(0,100).map((r, i) => `
     <tr>
+      <td class="num-cell">${i+1}</td>
       <td>${r['Invoice']||'—'}</td>
       <td>${r['Customer']||'—'}</td>
       <td>${r['Date']||'—'}</td>
@@ -1271,7 +1289,7 @@ function showDrilldown(monthLabel, invoicesForMonth){
       <td>${cleanPayment(r['Payment Mode'])}</td>
       <td class="num-cell">${fmtINR(num(r['Paid']))}</td>
     </tr>
-  `).join('') + (invoicesForMonth.length > 100 ? `<tr><td colspan="6" class="empty-note">+ ${invoicesForMonth.length-100} more invoices this month</td></tr>` : '');
+  `).join('') + (invoicesForMonth.length > 100 ? `<tr><td colspan="7" class="empty-note">+ ${invoicesForMonth.length-100} more invoices this month</td></tr>` : '');
   document.getElementById('drilldownPanel').style.display = 'block';
 }
 function closeDrilldown(){
@@ -1435,7 +1453,7 @@ function renderComparison(){
   ];
 
   const tbody = document.querySelector('#compareTable tbody');
-  tbody.innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="num-cell">${r[1]}</td><td class="num-cell">${r[2]}</td><td>${r[3]}</td></tr>`).join('');
+  tbody.innerHTML = rows.map((r, i) => `<tr><td class="num-cell">${i+1}</td><td>${r[0]}</td><td class="num-cell">${r[1]}</td><td class="num-cell">${r[2]}</td><td>${r[3]}</td></tr>`).join('');
 }
 
 function renderCohortChart(){
@@ -1641,18 +1659,19 @@ function runInvoiceSearch(){
   const q = document.getElementById('invoiceSearchInput').value.trim().toLowerCase();
   const tbody = document.querySelector('#invoiceSearchTable tbody');
   if(!q){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">Type above to search across all invoices.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">Type above to search across all invoices.</td></tr>';
     return;
   }
   const matches = RAW.invoices.filter(r =>
     (r['Invoice']||'').toLowerCase().includes(q) || (r['Customer']||'').toLowerCase().includes(q)
   ).slice(0,50);
   if(!matches.length){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No invoices match &ldquo;' + q + '&rdquo;.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No invoices match &ldquo;' + q + '&rdquo;.</td></tr>';
     return;
   }
-  tbody.innerHTML = matches.map(r => `
+  tbody.innerHTML = matches.map((r, i) => `
     <tr>
+      <td class="num-cell">${i+1}</td>
       <td>${r['Invoice']||'\u2014'}</td>
       <td>${r['Customer']||'\u2014'}</td>
       <td>${r['Date']||'\u2014'}</td>
