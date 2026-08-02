@@ -171,6 +171,33 @@
   .chart-box{ position:relative; width:100%; height:280px; }
   .chart-box canvas{ max-height:none; }
 
+  .dom-chart-outer{ display:flex; align-items:stretch; gap:6px; }
+  .dom-yaxis{
+    display:flex; flex-direction:column; justify-content:space-between;
+    width:56px; flex-shrink:0; height:200px; margin-top:10px;
+    font-size:10px; color:var(--ink-soft); text-align:right; white-space:nowrap;
+  }
+  .dom-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; flex:1; min-width:0; }
+  .dom-chart-wrap{
+    position:relative; display:flex; align-items:flex-end; gap:6px; height:220px; min-width:1050px;
+    padding-top:10px; border-bottom:1px solid var(--border);
+  }
+  .dom-bar-col{
+    position:relative; z-index:1;
+    flex:1 1 0; min-width:28px; height:100%; display:flex; flex-direction:column;
+    align-items:center; justify-content:flex-end;
+  }
+  .dom-bar{
+    width:65%; background:var(--amber); border-radius:2px 2px 0 0; min-height:2px;
+    transition:height 0.2s ease;
+  }
+  .dom-bar-label{
+    font-size:10px; color:var(--ink-soft); margin-top:4px; line-height:1;
+  }
+  .dom-gridline{
+    position:absolute; left:0; right:0; height:1px; background:var(--border); z-index:0;
+  }
+
   .table-wrap{overflow-x:auto;}
   table{width:100%; border-collapse:collapse; font-size:13px; min-width:520px;}
   th,td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); white-space:nowrap;}
@@ -302,10 +329,12 @@
 
   <div class="tab-nav" id="tabNav">
     <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+    <button class="tab-btn" data-tab="alerts" onclick="switchTab('alerts')">Alerts</button>
     <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Products Details</button>
     <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
     <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
     <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
+    <button class="tab-btn" data-tab="compare" onclick="switchTab('compare')">Compare</button>
   </div>
 
   <div class="filter-panel" id="globalFilterPanel">
@@ -373,10 +402,33 @@
     </div>
     <div class="hint-text">Tip: click any bar in the Monthly Sales chart to see that month's invoices.</div>
 
+  </div>
+
+  <div class="tab-content" data-tab="alerts" id="tab-alerts">
+    <div class="section-title"><span class="num">&#9888;</span><h2>Needs Attention</h2></div>
+    <div class="hint-text" style="margin-bottom:16px;">Everything worth checking on, gathered from across the dashboard, in one place.</div>
+
     <div class="alert-panel" id="callListPanel">
       <h3>&#128222; Needs a Call Today</h3>
       <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Wholesale customers only, flagged High Risk or Attention Required, sorted by longest gap since last purchase. Independent of the filters above.</div>
+      <div class="hint-text">Wholesale customers only, flagged High Risk or Attention Required, sorted by longest gap since last purchase. Independent of the filters on other tabs.</div>
+    </div>
+
+    <div class="alert-panel calm" id="slowMoverPanel">
+      <h3>&#128202; Item Trend Watch (vs. previous month)</h3>
+      <div id="slowMoverBody"><div class="alert-item">Loading&hellip;</div></div>
+    </div>
+
+    <div class="alert-panel calm" id="mismatchPanel">
+      <h3>&#129518; Qty &times; Rate Mismatch Check</h3>
+      <div id="mismatchBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Flags item rows where Qty &times; Rate doesn't match the Amount billed (more than &#8377;2 difference) &mdash; usually a billing typo.</div>
+    </div>
+
+    <div class="panel">
+      <h3>New Customers vs At-Risk Customers, by Month</h3>
+      <canvas id="churnChart"></canvas>
+      <div class="hint-text">"At-risk" here means 60+ days since last purchase as of that month's end &mdash; an estimate from invoice history, independent of the Flag column (which uses different thresholds per customer type).</div>
     </div>
   </div>
 
@@ -390,20 +442,9 @@
       <h3>Payment Mode Split</h3><canvas id="paymentChart"></canvas>
     </div>
 
-    <div class="alert-panel calm" id="slowMoverPanel">
-      <h3>&#128202; Item Trend Watch (vs. previous month)</h3>
-      <div id="slowMoverBody"><div class="alert-item">Loading&hellip;</div></div>
-    </div>
-
     <div class="panel">
       <h3>Frequently Bought Together</h3>
       <div id="bundleBody"><div class="alert-item">Loading&hellip;</div></div>
-    </div>
-
-    <div class="alert-panel calm" id="mismatchPanel">
-      <h3>&#129518; Qty &times; Rate Mismatch Check</h3>
-      <div id="mismatchBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Flags item rows where Qty &times; Rate doesn't match the Amount billed (more than &#8377;2 difference) &mdash; usually a billing typo.</div>
     </div>
   </div>
 
@@ -428,11 +469,6 @@
       <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice customer names.</div>
     </div>
 
-    <div class="panel">
-      <h3>New Customers vs At-Risk Customers, by Month</h3>
-      <canvas id="churnChart"></canvas>
-      <div class="hint-text">"At-risk" here means 60+ days since last purchase as of that month\'s end &mdash; an estimate from invoice history, independent of the Flag column (which uses different thresholds per customer type).</div>
-    </div>
   </div>
 
   <div class="tab-content" data-tab="customers" id="tab-customers">
@@ -525,8 +561,38 @@
 
     <div class="panel">
       <h3>Sales by Day of the Month</h3>
-      <div class="chart-box"><canvas id="domChart"></canvas></div>
-      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end).</div>
+      <div class="dom-chart-outer">
+        <div class="dom-yaxis" id="domYAxis"></div>
+        <div class="dom-scroll"><div class="dom-chart-wrap" id="domBars"></div></div>
+      </div>
+      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end). Swipe sideways on mobile to see all days; tap a bar for the exact amount.</div>
+    </div>
+  </div>
+
+  <div class="tab-content" data-tab="compare" id="tab-compare">
+    <div class="section-title"><span class="num">&#8646;</span><h2>Compare Periods</h2></div>
+
+    <div class="filter-panel">
+      <div class="filter-row">
+        <div class="filter-field">
+          Period A
+          <select id="compareMonthA"></select>
+        </div>
+        <div class="filter-field">
+          Period B
+          <select id="compareMonthB"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        <table id="compareTable">
+          <thead><tr><th>Metric</th><th id="compareHeadA">Period A</th><th id="compareHeadB">Period B</th><th>Change</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty-note">Pick two months above to compare.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="hint-text">Compares full calendar months, independent of the Sales Filters on other tabs.</div>
     </div>
   </div>
 
@@ -658,6 +724,7 @@ async function loadAll(){
     renderCohortChart();
     renderChurnAcquisitionTrend();
     renderMismatches();
+    initCompareTab();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
@@ -1144,26 +1211,52 @@ function renderDowChart(invoices){
   });
 }
 
+function niceAxisMax(val){
+  if(val <= 0) return 100;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(val)));
+  const residual = val / magnitude;
+  let niceResidual;
+  if(residual <= 1) niceResidual = 1;
+  else if(residual <= 2) niceResidual = 2;
+  else if(residual <= 5) niceResidual = 5;
+  else niceResidual = 10;
+  return niceResidual * magnitude;
+}
+
 function renderDomChart(invoices){
   const byDay = Array(31).fill(0);
   invoices.forEach(r => {
     const d = parseInvoiceDate(r['Date']);
     if(d) byDay[d.getDate()-1] += num(r['Paid']);
   });
-  const labels = Array.from({length:31}, (_,i)=>String(i+1));
-  destroy('domChart');
-  charts.domChart = new Chart(document.getElementById('domChart'), {
-    type:'bar',
-    data:{ labels, datasets:[{ label:'Sales (₹)', data:byDay, backgroundColor:'#c1652f', barPercentage:0.6, categoryPercentage:0.8 }] },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ ticks:{ autoSkip:false, maxRotation:90, minRotation:45, font:{size:9} } },
-        y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } }
-      }
+  const rawMax = Math.max(1, ...byDay);
+  const niceMax = niceAxisMax(rawMax);
+
+  const yAxisEl = document.getElementById('domYAxis');
+  if(yAxisEl){
+    const steps = 4;
+    const labelsArr = [];
+    for(let i=steps;i>=0;i--){
+      labelsArr.push(`<span>${fmtINR(niceMax * i/steps)}</span>`);
     }
-  });
+    yAxisEl.innerHTML = labelsArr.join('');
+  }
+
+  const wrap = document.getElementById('domBars');
+  if(!wrap) return;
+
+  const gridlinesHtml = [1,2,3,4].map(i => {
+    const bottomPct = (i/4)*100;
+    return `<div class="dom-gridline" style="bottom:${bottomPct}%"></div>`;
+  }).join('');
+
+  wrap.innerHTML = gridlinesHtml + byDay.map((val, i) => {
+    const pct = val > 0 ? Math.max(3, (val / niceMax) * 100) : 0;
+    return `<div class="dom-bar-col" title="Day ${i+1}: ${fmtINR(val)}">
+      <div class="dom-bar" style="height:${pct}%"></div>
+      <div class="dom-bar-label">${i+1}</div>
+    </div>`;
+  }).join('');
 }
 
 function showDrilldown(monthLabel, invoicesForMonth){
@@ -1224,6 +1317,16 @@ function renderRepeatSplit(){
   });
 }
 
+function resetCanvas(id){
+  const old = document.getElementById(id);
+  if(!old) return;
+  const fresh = document.createElement('canvas');
+  fresh.id = id;
+  old.replaceWith(fresh);
+}
+
+let timingChartsFixed = false;
+
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.dataset.tab===tab));
@@ -1235,12 +1338,17 @@ function switchTab(tab){
   }
 
   // Charts created while their tab was hidden (display:none) can get stuck at a
-  // degenerate size, since their container had zero width at creation time.
-  // A plain .resize() doesn't always recover from this, so force a full rebuild
-  // the moment the Timing tab actually becomes visible.
-  if(tab === 'timing' && (RAW.invoices.length || RAW.items.length)){
-    renderDowChart(lastFilteredInvoices);
-    renderDomChart(lastFilteredInvoices);
+  // degenerate size -- sometimes even the canvas element's own width/height
+  // attributes get stuck, which destroy()+recreate doesn't always clear.
+  // The first time Timing becomes visible, swap in brand-new canvas elements
+  // and rebuild from scratch to guarantee a clean slate.
+  if(tab === 'timing' && !timingChartsFixed && (RAW.invoices.length || RAW.items.length)){
+    timingChartsFixed = true;
+    resetCanvas('dowChart');
+    requestAnimationFrame(() => {
+      renderDowChart(lastFilteredInvoices);
+      renderDomChart(lastFilteredInvoices); // plain HTML/CSS now, always sizes correctly
+    });
   }
 
   setTimeout(() => {
@@ -1265,6 +1373,69 @@ function renderAvgGap(){
   const rAvg = avg(RAW.retail);
   document.getElementById('gapWholesale').textContent = wAvg===null ? '\u2014' : Math.round(wAvg) + 'd';
   document.getElementById('gapRetail').textContent = rAvg===null ? '\u2014' : Math.round(rAvg) + 'd';
+}
+
+function initCompareTab(){
+  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  const selA = document.getElementById('compareMonthA');
+  const selB = document.getElementById('compareMonthB');
+  if(!selA || !selB) return;
+  const opts = monthsPresent.map(m => `<option value="${m}">${m}</option>`).join('');
+  selA.innerHTML = opts;
+  selB.innerHTML = opts;
+  if(monthsPresent.length >= 2){
+    selA.value = monthsPresent[monthsPresent.length-2];
+    selB.value = monthsPresent[monthsPresent.length-1];
+  } else if(monthsPresent.length === 1){
+    selA.value = monthsPresent[0];
+    selB.value = monthsPresent[0];
+  }
+  selA.onchange = renderComparison;
+  selB.onchange = renderComparison;
+  renderComparison();
+}
+
+function computeMonthMetrics(month){
+  const invoices = RAW.invoices.filter(r => r['Month']===month);
+  const items = RAW.items.filter(r => r['Month']===month);
+  const totalSales = invoices.reduce((s,r)=>s+num(r['Paid']),0);
+  const totalProducts = items.reduce((s,r)=>s+num(r['Qty']),0);
+  const uniqueCustomers = new Set(invoices.map(r=>normName(r['Customer'])).filter(Boolean)).size;
+  const invoiceCount = new Set(invoices.map(r=>r['Invoice'])).size || invoices.length;
+  const avgBill = invoiceCount ? totalSales/invoiceCount : 0;
+  return { totalSales, totalProducts, uniqueCustomers, avgBill };
+}
+
+function pctChangeHTML(a, b){
+  if(a === 0) return b === 0 ? '\u2014' : '<span class="trend-up">New</span>';
+  const pct = ((b-a)/a)*100;
+  if(Math.abs(pct) < 0.5) return '<span class="trend-flat">&#9679; flat</span>';
+  const dir = pct > 0 ? 'up' : 'down';
+  const arrow = pct > 0 ? '&#9650;' : '&#9660;';
+  return `<span class="trend-${dir}">${arrow} ${Math.abs(pct).toFixed(0)}%</span>`;
+}
+
+function renderComparison(){
+  const selA = document.getElementById('compareMonthA');
+  const selB = document.getElementById('compareMonthB');
+  if(!selA || !selB || !selA.value || !selB.value) return;
+  const monthA = selA.value;
+  const monthB = selB.value;
+  document.getElementById('compareHeadA').textContent = monthA;
+  document.getElementById('compareHeadB').textContent = monthB;
+
+  const a = computeMonthMetrics(monthA);
+  const b = computeMonthMetrics(monthB);
+
+  const rows = [
+    ['Total Sales', fmtINR(a.totalSales), fmtINR(b.totalSales), pctChangeHTML(a.totalSales, b.totalSales)],
+    ['Total Products Sold', a.totalProducts.toLocaleString('en-IN'), b.totalProducts.toLocaleString('en-IN'), pctChangeHTML(a.totalProducts, b.totalProducts)],
+    ['Unique Customers', a.uniqueCustomers.toLocaleString('en-IN'), b.uniqueCustomers.toLocaleString('en-IN'), pctChangeHTML(a.uniqueCustomers, b.uniqueCustomers)],
+    ['Avg Bill Value', fmtINR(a.avgBill), fmtINR(b.avgBill), pctChangeHTML(a.avgBill, b.avgBill)],
+  ];
+
+  const tbody = document.querySelector('#compareTable tbody');
+  tbody.innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td class="num-cell">${r[1]}</td><td class="num-cell">${r[2]}</td><td>${r[3]}</td></tr>`).join('');
 }
 
 function renderCohortChart(){
