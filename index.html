@@ -91,10 +91,11 @@
     background:var(--bg); border:1px solid var(--border); border-radius:10px;
     padding:14px 18px; margin-bottom:16px;
   }
-  .filter-panel .filter-heading{
+  .filter-heading{
     font-size:11.5px; text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-soft);
     display:flex; justify-content:space-between; align-items:center; font-weight:600; cursor:pointer;
   }
+  .alert-panel .filter-heading{ color:var(--amber); }
   .chevron{ display:inline-block; margin-left:6px; font-size:9px; transition:transform 0.2s ease; }
   .chevron.expanded{ transform:rotate(180deg); }
   .filter-summary{
@@ -135,6 +136,18 @@
   .tab-btn.active{color:var(--navy); border-bottom-color:var(--navy);}
   .tab-content{display:none;}
   .tab-content.active{display:block;}
+  .goal-input-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .goal-input-row input{
+    flex:1; min-width:140px; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
+    font-family:inherit; font-size:13px; background:#fff; color:var(--ink);
+  }
+  .goal-bar-track{ background:var(--bg-soft); border:1px solid var(--border); border-radius:8px; height:14px; overflow:hidden; }
+  .goal-bar-fill{ height:100%; background:var(--navy); border-radius:8px 0 0 8px; transition:width 0.3s ease; }
+  .goal-bar-fill.goal-met{ background:var(--green); }
+
+  .note-btn{ background:none; border:none; cursor:pointer; font-size:14px; padding:2px 4px; }
+  .note-btn.has-note{ color:var(--amber); }
+  .note-btn:not(.has-note){ color:var(--ink-soft); opacity:0.5; }
 
   .tags-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:26px; }
   .tag{ background:var(--bg); border:1px solid var(--border); border-left:3px solid var(--navy); border-radius:10px; padding:16px 18px; }
@@ -244,7 +257,8 @@
   [data-theme="dark"] .filter-field select,
   [data-theme="dark"] .filter-field input,
   [data-theme="dark"] .search-panel input,
-  [data-theme="dark"] .toolbar-input{
+  [data-theme="dark"] .toolbar-input,
+  [data-theme="dark"] .goal-input-row input{
     background:var(--bg-soft); color:var(--ink); border-color:var(--border);
   }
   [data-theme="dark"] .month-chip{
@@ -294,9 +308,9 @@
 
   <div class="tab-nav" id="tabNav">
     <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
-    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Product</button>
-    <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
+    <button class="tab-btn" data-tab="productmix" onclick="switchTab('productmix')">Products Details</button>
     <button class="tab-btn" data-tab="retention" onclick="switchTab('retention')">Retention</button>
+    <button class="tab-btn" data-tab="customers" onclick="switchTab('customers')">Customers</button>
     <button class="tab-btn" data-tab="timing" onclick="switchTab('timing')">Timing</button>
   </div>
 
@@ -345,16 +359,23 @@
       <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div><div class="tag-trend" id="trendToday"></div></div>
     </div>
 
-    
+    <div class="panel" id="goalPanel">
+      <h3>Monthly Sales Goal</h3>
+      <div class="goal-input-row">
+        <input type="number" id="goalInput" placeholder="e.g. 200000" min="0" step="1000">
+        <button class="toolbar-btn" onclick="setSalesGoal()">Set Goal</button>
+      </div>
+      <div id="goalProgressWrap" style="display:none;">
+        <div class="goal-bar-track"><div class="goal-bar-fill" id="goalBarFill"></div></div>
+        <div class="result-note" id="goalProgressNote"></div>
+      </div>
+      <div class="hint-text">Goal resets when you reload the page (not saved between visits). Compares against Total Sales for the months currently selected above.</div>
+    </div>
+
     <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
     <div class="grid-2">
       <div class="panel"><h3>Monthly Sales (&#8377;)</h3><canvas id="monthChart"></canvas></div>
       <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
-    </div>
-    <div class="alert-panel" id="callListPanel">
-      <h3>&#128222; Needs a Call Today</h3>
-      <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">High Risk &amp; Attention Required customers, sorted by longest gap since last purchase. Independent of the filters above.</div>
     </div>
 
     <div class="panel drilldown-panel" id="drilldownPanel">
@@ -370,10 +391,16 @@
       </div>
     </div>
     <div class="hint-text">Tip: click any bar in the Monthly Sales chart to see that month's invoices.</div>
+
+    <div class="alert-panel" id="callListPanel">
+      <h3>&#128222; Needs a Call Today</h3>
+      <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Wholesale customers only, flagged High Risk or Attention Required, sorted by longest gap since last purchase. Independent of the filters above.</div>
+    </div>
   </div>
 
   <div class="tab-content" data-tab="productmix" id="tab-productmix">
-    <div class="section-title"><span class="num">02</span><h2>Product Details</h2></div>
+    <div class="section-title"><span class="num">02</span><h2>Products Details</h2></div>
     <div class="grid-2b">
       <div class="panel"><h3>Top Item Types by Revenue</h3><div class="chart-box"><canvas id="itemChart"></canvas></div></div>
       <div class="panel"><h3>Top Item Types by Count</h3><div class="chart-box"><canvas id="itemCountChart"></canvas></div></div>
@@ -391,19 +418,11 @@
       <h3>Frequently Bought Together</h3>
       <div id="bundleBody"><div class="alert-item">Loading&hellip;</div></div>
     </div>
-  </div>
 
-  <div class="tab-content" data-tab="timing" id="tab-timing">
-    <div class="section-title"><span class="num">03</span><h2>Sales Timing</h2></div>
-    <div class="grid-2b">
-      <div class="panel">
-        <h3>Which weekdays sell best</h3>
-        <canvas id="dowChart"></canvas>
-      </div>
-      <div class="panel">
-        <h3>Peak Hours (revenue by hour &amp; weekday)</h3>
-        <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
-      </div>
+    <div class="alert-panel calm" id="mismatchPanel">
+      <h3>&#129518; Qty &times; Rate Mismatch Check</h3>
+      <div id="mismatchBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Flags item rows where Qty &times; Rate doesn't match the Amount billed (more than &#8377;2 difference) &mdash; usually a billing typo.</div>
     </div>
   </div>
 
@@ -493,11 +512,11 @@
     <div class="panel">
       <div class="table-wrap">
       <table id="topCustTable">
-        <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
-        <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+        <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th><th>Note</th></tr></thead>
+        <tbody><tr><td colspan="7" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
       </div>
-      <div class="hint-text">Click a customer's name to see their purchase history.</div>
+      <div class="hint-text">Click a customer's name to see their purchase history. Click the note icon to jot a quick reminder (not saved between visits).</div>
 
       <div class="panel timeline-panel" id="timelinePanel" style="margin-top:14px;">
         <div class="drilldown-head">
@@ -507,6 +526,26 @@
         <canvas id="timelineChart" height="90"></canvas>
         <div id="timelineEmpty" class="timeline-empty" style="display:none;">No matching invoice history found for this name (name spelling may differ between the customer list and invoices).</div>
       </div>
+    </div>
+  </div>
+
+  <div class="tab-content" data-tab="timing" id="tab-timing">
+    <div class="section-title"><span class="num">03</span><h2>Sales Timing</h2></div>
+    <div class="grid-2b">
+      <div class="panel">
+        <h3>Which weekdays sell best</h3>
+        <div class="chart-box"><canvas id="dowChart"></canvas></div>
+      </div>
+      <div class="panel">
+        <h3>Peak Hours (revenue by hour &amp; weekday)</h3>
+        <div class="heatmap-wrap"><table class="heatmap" id="heatmapTable"></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Sales by Day of the Month</h3>
+      <div class="chart-box"><canvas id="domChart"></canvas></div>
+      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end).</div>
     </div>
   </div>
 
@@ -621,6 +660,7 @@ async function loadAll(){
     renderAvgGap();
     renderCohortChart();
     renderChurnAcquisitionTrend();
+    renderMismatches();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
     statusEl.className = 'status-ok';
   } catch(err){
@@ -744,6 +784,7 @@ function applyFilters(){
   renderItemCountChart(filteredItems);
   renderPaymentChart(filteredInvoices);
   renderDowChart(filteredInvoices);
+  renderDomChart(filteredInvoices);
   renderSlowMovers(filteredItems);
   renderHeatmap(filteredInvoices);
   renderBundles(filteredItems);
@@ -824,6 +865,31 @@ function renderSalesKPIs(invoices, items){
   document.getElementById('kpiProducts').textContent = Math.round(totalProducts).toLocaleString('en-IN');
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
   document.getElementById('kpiCustomers').textContent = uniqueCustomers.size.toLocaleString('en-IN');
+  renderGoalProgress(totalSales);
+}
+
+let salesGoal = null;
+
+function setSalesGoal(){
+  const val = num(document.getElementById('goalInput').value);
+  salesGoal = val > 0 ? val : null;
+  applyFilters(); // recompute KPIs, which will call renderGoalProgress with the current filtered total
+}
+
+function renderGoalProgress(totalSales){
+  const wrap = document.getElementById('goalProgressWrap');
+  if(!salesGoal){
+    wrap.style.display = 'none';
+    return;
+  }
+  wrap.style.display = 'block';
+  const pct = Math.min(100, (totalSales / salesGoal) * 100);
+  const fill = document.getElementById('goalBarFill');
+  fill.style.width = pct + '%';
+  fill.classList.toggle('goal-met', totalSales >= salesGoal);
+  document.getElementById('goalProgressNote').textContent =
+    `${fmtINR(totalSales)} of ${fmtINR(salesGoal)} goal (${pct.toFixed(0)}%)` +
+    (totalSales >= salesGoal ? ' \u2014 goal reached! \ud83c\udf89' : '');
 }
 
 function trendHTML(pct, compareLabel){
@@ -994,38 +1060,58 @@ function renderFlagChart(canvasId, list){
   });
 }
 
+let customerNotes = {};
+
+function editCustomerNote(name){
+  const key = normName(name);
+  const existing = customerNotes[key] || '';
+  const result = window.prompt(`Quick note for ${name} (not saved between visits):`, existing);
+  if(result === null) return; // cancelled
+  if(result.trim() === '') delete customerNotes[key];
+  else customerNotes[key] = result.trim();
+  const btn = document.querySelector(`.note-btn[data-key="${key}"]`);
+  if(btn){
+    const has = !!customerNotes[key];
+    btn.classList.toggle('has-note', has);
+    btn.title = has ? customerNotes[key] : 'Add a quick note';
+  }
+}
+
 function renderTopCustomers(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No customers match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
   const shown = list.slice(0,30);
-  tbody.innerHTML = shown.map(r => `
+  tbody.innerHTML = shown.map(r => {
+    const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
+    const key = normName(r['Name']);
+    const hasNote = !!customerNotes[key];
+    return `
     <tr>
-      <td><span class="cust-name-link" onclick="showTimeline('${(r['Name']||'').replace(/'/g,"\\'")}')">${r['Name'] || '—'}</span></td>
+      <td><span class="cust-name-link" onclick="showTimeline('${nameEsc}')">${r['Name'] || '—'}</span></td>
       <td class="num-cell">${r['Phone'] || '—'}${waButton(r['Phone'], r['Name'])}</td>
       <td>${r.__type}</td>
       <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
       <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
       <td class="num-cell">${r['Gap'] || '—'}</td>
+      <td><button class="note-btn${hasNote ? ' has-note' : ''}" data-key="${key}" title="${hasNote ? customerNotes[key] : 'Add a quick note'}" onclick="editCustomerNote('${nameEsc}')">&#128221;</button></td>
     </tr>
-  `).join('') + (list.length > 30 ? `<tr><td colspan="6" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+  `;
+  }).join('') + (list.length > 30 ? `<tr><td colspan="7" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
 }
 
 function renderCallList(){
-  const combined = [
-    ...RAW.wholesale.map(r => ({...r, __type:'Wholesale'})),
-    ...RAW.retail.map(r => ({...r, __type:'Retail'})),
-  ];
-  const needsCall = combined
+  const wholesaleOnly = RAW.wholesale.map(r => ({...r, __type:'Wholesale'}));
+  const allNeedsCall = wholesaleOnly
     .filter(r => { const f = cleanFlag(r['Flag']); return f.includes('High Risk') || f.includes('Attention'); })
-    .sort((a,b) => num(b['Gap']) - num(a['Gap']))
-    .slice(0, 12);
+    .sort((a,b) => num(b['Gap']) - num(a['Gap']));
+  const needsCall = allNeedsCall.slice(0, 12);
 
   const body = document.getElementById('callListBody');
   if(!needsCall.length){
-    body.innerHTML = '<div class="alert-item">Nobody flagged right now &mdash; retention looks healthy.</div>';
+    body.innerHTML = '<div class="alert-item">No wholesale customers flagged right now &mdash; retention looks healthy.</div>';
     return;
   }
   body.innerHTML = needsCall.map(r => `
@@ -1094,8 +1180,30 @@ function renderDowChart(invoices){
   destroy('dowChart');
   charts.dowChart = new Chart(document.getElementById('dowChart'), {
     type:'bar',
-    data:{ labels, datasets:[{ label:'Sales (₹)', data, backgroundColor:'#5b7290' }] },
-    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+    data:{ labels, datasets:[{ label:'Sales (₹)', data, backgroundColor:'#5b7290', barPercentage:0.6, categoryPercentage:0.8 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+  });
+}
+
+function renderDomChart(invoices){
+  const byDay = Array(31).fill(0);
+  invoices.forEach(r => {
+    const d = parseInvoiceDate(r['Date']);
+    if(d) byDay[d.getDate()-1] += num(r['Paid']);
+  });
+  const labels = Array.from({length:31}, (_,i)=>String(i+1));
+  destroy('domChart');
+  charts.domChart = new Chart(document.getElementById('domChart'), {
+    type:'bar',
+    data:{ labels, datasets:[{ label:'Sales (₹)', data:byDay, backgroundColor:'#c1652f', barPercentage:0.6, categoryPercentage:0.8 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ ticks:{ autoSkip:false, maxRotation:0, minRotation:0, font:{size:9} } },
+        y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } }
+      }
+    }
   });
 }
 
@@ -1359,6 +1467,34 @@ function renderBundles(items){
   }
   body.innerHTML = sorted.map(([pair,count]) => `
     <div class="bundle-item"><span>${pair}</span><span class="bundle-count">${count} invoices</span></div>
+  `).join('');
+}
+
+function renderMismatches(){
+  const mismatches = RAW.items
+    .map(r => {
+      const qty = num(r['Qty']);
+      const rate = num(r['Rate']);
+      const amount = num(r['Amount']);
+      const expected = qty * rate;
+      const diff = amount - expected;
+      return { ...r, expected, diff };
+    })
+    .filter(r => Math.abs(r.diff) > 2)
+    .sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff))
+    .slice(0, 10);
+
+  const body = document.getElementById('mismatchBody');
+  if(!mismatches.length){
+    body.innerHTML = '<div class="alert-item">No mismatches found &mdash; all Qty &times; Rate line items match their billed Amount.</div>';
+    return;
+  }
+  body.innerHTML = mismatches.map(r => `
+    <div class="alert-item">
+      <b>${r['Invoice #'] || r['Invoice'] || '—'}</b> &mdash; ${r['Type']||'Unknown'}:
+      ${num(r['Qty'])} &times; ₹${num(r['Rate'])} = ${fmtINR(r.expected)}, billed ${fmtINR(num(r['Amount']))}
+      (${r.diff > 0 ? '+' : ''}${fmtINR(r.diff)})
+    </div>
   `).join('');
 }
 
