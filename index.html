@@ -136,18 +136,7 @@
   .tab-btn.active{color:var(--navy); border-bottom-color:var(--navy);}
   .tab-content{display:none;}
   .tab-content.active{display:block;}
-  .goal-input-row{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
-  .goal-input-row input{
-    flex:1; min-width:140px; padding:8px 10px; border:1px solid var(--border); border-radius:8px;
-    font-family:inherit; font-size:13px; background:#fff; color:var(--ink);
-  }
-  .goal-bar-track{ background:var(--bg-soft); border:1px solid var(--border); border-radius:8px; height:14px; overflow:hidden; }
-  .goal-bar-fill{ height:100%; background:var(--navy); border-radius:8px 0 0 8px; transition:width 0.3s ease; }
-  .goal-bar-fill.goal-met{ background:var(--green); }
 
-  .note-btn{ background:none; border:none; cursor:pointer; font-size:14px; padding:2px 4px; }
-  .note-btn.has-note{ color:var(--amber); }
-  .note-btn:not(.has-note){ color:var(--ink-soft); opacity:0.5; }
 
   .tags-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:26px; }
   .tag{ background:var(--bg); border:1px solid var(--border); border-left:3px solid var(--navy); border-radius:10px; padding:16px 18px; }
@@ -226,6 +215,11 @@
     text-decoration:none; border:1px solid #bfe3cc; background:#f1fbf5; padding:3px 8px; border-radius:14px;
     margin-left:8px; white-space:nowrap;
   }
+  .call-btn{
+    display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--navy);
+    text-decoration:none; border:1px solid #c3d3e8; background:#eef3fa; padding:3px 8px; border-radius:14px;
+    margin-left:8px; white-space:nowrap;
+  }
   .wa-btn:hover{background:#e2f6e9;}
 
   .drilldown-panel{margin-top:14px; display:none;}
@@ -257,8 +251,7 @@
   [data-theme="dark"] .filter-field select,
   [data-theme="dark"] .filter-field input,
   [data-theme="dark"] .search-panel input,
-  [data-theme="dark"] .toolbar-input,
-  [data-theme="dark"] .goal-input-row input{
+  [data-theme="dark"] .toolbar-input{
     background:var(--bg-soft); color:var(--ink); border-color:var(--border);
   }
   [data-theme="dark"] .month-chip{
@@ -271,6 +264,7 @@
   [data-theme="dark"] .alert-panel{ background:#2a2115; border-color:#4a3820; }
   [data-theme="dark"] .alert-panel h3{ color:var(--amber); }
   [data-theme="dark"] .wa-btn{ background:#132a1c; border-color:#2c5c3d; color:#6fcf97; }
+  [data-theme="dark"] .call-btn{ background:#152436; border-color:#33547a; color:#8fb4e6; }
   [data-theme="dark"] .toolbar-btn.ghost{ background:var(--bg); }
   body{ transition: background 0.2s ease, color 0.2s ease; }
 
@@ -357,19 +351,6 @@
       <div class="tag"><div class="tag-label">Total Products Count</div><div class="tag-value" id="kpiProducts">&mdash;</div><div class="tag-trend" id="trendProducts"></div></div>
       <div class="tag"><div class="tag-label">Total Customer Unique</div><div class="tag-value" id="kpiCustomers">&mdash;</div></div>
       <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div><div class="tag-trend" id="trendToday"></div></div>
-    </div>
-
-    <div class="panel" id="goalPanel">
-      <h3>Monthly Sales Goal</h3>
-      <div class="goal-input-row">
-        <input type="number" id="goalInput" placeholder="e.g. 200000" min="0" step="1000">
-        <button class="toolbar-btn" onclick="setSalesGoal()">Set Goal</button>
-      </div>
-      <div id="goalProgressWrap" style="display:none;">
-        <div class="goal-bar-track"><div class="goal-bar-fill" id="goalBarFill"></div></div>
-        <div class="result-note" id="goalProgressNote"></div>
-      </div>
-      <div class="hint-text">Goal resets when you reload the page (not saved between visits). Compares against Total Sales for the months currently selected above.</div>
     </div>
 
     <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
@@ -512,11 +493,11 @@
     <div class="panel">
       <div class="table-wrap">
       <table id="topCustTable">
-        <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th><th>Note</th></tr></thead>
-        <tbody><tr><td colspan="7" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+        <thead><tr><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
+        <tbody><tr><td colspan="6" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
       </div>
-      <div class="hint-text">Click a customer's name to see their purchase history. Click the note icon to jot a quick reminder (not saved between visits).</div>
+      <div class="hint-text">Click a customer's name to see their purchase history.</div>
 
       <div class="panel timeline-panel" id="timelinePanel" style="margin-top:14px;">
         <div class="drilldown-head">
@@ -555,6 +536,7 @@
 <script>
 const charts = {};
 let RAW = { invoices: [], items: [], wholesale: [], retail: [] };
+let lastFilteredInvoices = [];
 
 function fmtINR(n){
   if(n===null||n===undefined||isNaN(n)) return '&mdash;'.replace('&mdash;','\u2014');
@@ -582,8 +564,23 @@ function parseInvoiceDate(str){
   if(!str) return null;
   str = String(str).trim();
   const monthMap = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  let m = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
-  if(m) return new Date(parseInt(m[3]), monthMap[m[2]], parseInt(m[1]));
+
+  // DD-Mon-YYYY or DD Mon YYYY (e.g. "02-Aug-2026")
+  let m = str.match(/^(\d{1,2})[\s-]([A-Za-z]{3})[\s-](\d{4})$/);
+  if(m && monthMap[m[2]] !== undefined) return new Date(parseInt(m[3]), monthMap[m[2]], parseInt(m[1]));
+
+  // ISO YYYY-MM-DD (parsed as LOCAL midnight, avoiding the native UTC-midnight pitfall)
+  m = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T\s].*)?$/);
+  if(m) return new Date(parseInt(m[1]), parseInt(m[2])-1, parseInt(m[3]));
+
+  // Numeric DD/MM/YYYY or DD-MM-YYYY (day-first, since this is an Indian dataset)
+  m = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m){
+    const day = parseInt(m[1]), month = parseInt(m[2]);
+    if(month >= 1 && month <= 12) return new Date(parseInt(m[3]), month-1, day);
+  }
+
+  // Fallback: let the browser try (least reliable for ambiguous formats)
   const d = new Date(str);
   return isNaN(d.getTime()) ? null : d;
 }
@@ -679,6 +676,11 @@ function waLink(phone, name){
 function waButton(phone, name){
   if(!phone) return '';
   return `<a class="wa-btn" href="${waLink(phone,name)}" target="_blank" rel="noopener">&#128172; WA</a>`;
+}
+function callButton(phone){
+  if(!phone) return '';
+  const digits = String(phone).replace(/\D/g,'');
+  return `<a class="call-btn" href="tel:${digits}">&#128222; Call</a>`;
 }
 function isSameDay(d1, d2){
   return d1 && d2 && d1.getFullYear()===d2.getFullYear() && d1.getMonth()===d2.getMonth() && d1.getDate()===d2.getDate();
@@ -785,6 +787,7 @@ function applyFilters(){
   renderPaymentChart(filteredInvoices);
   renderDowChart(filteredInvoices);
   renderDomChart(filteredInvoices);
+  lastFilteredInvoices = filteredInvoices;
   renderSlowMovers(filteredItems);
   renderHeatmap(filteredInvoices);
   renderBundles(filteredItems);
@@ -865,31 +868,6 @@ function renderSalesKPIs(invoices, items){
   document.getElementById('kpiProducts').textContent = Math.round(totalProducts).toLocaleString('en-IN');
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
   document.getElementById('kpiCustomers').textContent = uniqueCustomers.size.toLocaleString('en-IN');
-  renderGoalProgress(totalSales);
-}
-
-let salesGoal = null;
-
-function setSalesGoal(){
-  const val = num(document.getElementById('goalInput').value);
-  salesGoal = val > 0 ? val : null;
-  applyFilters(); // recompute KPIs, which will call renderGoalProgress with the current filtered total
-}
-
-function renderGoalProgress(totalSales){
-  const wrap = document.getElementById('goalProgressWrap');
-  if(!salesGoal){
-    wrap.style.display = 'none';
-    return;
-  }
-  wrap.style.display = 'block';
-  const pct = Math.min(100, (totalSales / salesGoal) * 100);
-  const fill = document.getElementById('goalBarFill');
-  fill.style.width = pct + '%';
-  fill.classList.toggle('goal-met', totalSales >= salesGoal);
-  document.getElementById('goalProgressNote').textContent =
-    `${fmtINR(totalSales)} of ${fmtINR(salesGoal)} goal (${pct.toFixed(0)}%)` +
-    (totalSales >= salesGoal ? ' \u2014 goal reached! \ud83c\udf89' : '');
 }
 
 function trendHTML(pct, compareLabel){
@@ -1060,34 +1038,15 @@ function renderFlagChart(canvasId, list){
   });
 }
 
-let customerNotes = {};
-
-function editCustomerNote(name){
-  const key = normName(name);
-  const existing = customerNotes[key] || '';
-  const result = window.prompt(`Quick note for ${name} (not saved between visits):`, existing);
-  if(result === null) return; // cancelled
-  if(result.trim() === '') delete customerNotes[key];
-  else customerNotes[key] = result.trim();
-  const btn = document.querySelector(`.note-btn[data-key="${key}"]`);
-  if(btn){
-    const has = !!customerNotes[key];
-    btn.classList.toggle('has-note', has);
-    btn.title = has ? customerNotes[key] : 'Add a quick note';
-  }
-}
-
 function renderTopCustomers(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No customers match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
   const shown = list.slice(0,30);
   tbody.innerHTML = shown.map(r => {
     const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
-    const key = normName(r['Name']);
-    const hasNote = !!customerNotes[key];
     return `
     <tr>
       <td><span class="cust-name-link" onclick="showTimeline('${nameEsc}')">${r['Name'] || '—'}</span></td>
@@ -1096,10 +1055,9 @@ function renderTopCustomers(list){
       <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
       <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
       <td class="num-cell">${r['Gap'] || '—'}</td>
-      <td><button class="note-btn${hasNote ? ' has-note' : ''}" data-key="${key}" title="${hasNote ? customerNotes[key] : 'Add a quick note'}" onclick="editCustomerNote('${nameEsc}')">&#128221;</button></td>
     </tr>
   `;
-  }).join('') + (list.length > 30 ? `<tr><td colspan="7" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+  }).join('') + (list.length > 30 ? `<tr><td colspan="6" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
 }
 
 function renderCallList(){
@@ -1117,6 +1075,7 @@ function renderCallList(){
   body.innerHTML = needsCall.map(r => `
     <div class="alert-item">
       <b>${r['Gap']||'?'}d</b> &mdash; ${r['Name']||'Unknown'} (${r.__type}) &mdash; ${r['Flag']||''}
+      ${callButton(r['Phone'])}
       ${waButton(r['Phone'], r['Name'])}
     </div>
   `).join('');
@@ -1200,7 +1159,7 @@ function renderDomChart(invoices){
       responsive:true, maintainAspectRatio:false,
       plugins:{legend:{display:false}},
       scales:{
-        x:{ ticks:{ autoSkip:false, maxRotation:0, minRotation:0, font:{size:9} } },
+        x:{ ticks:{ autoSkip:false, maxRotation:90, minRotation:45, font:{size:9} } },
         y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } }
       }
     }
@@ -1273,6 +1232,15 @@ function switchTab(tab){
   if(filterPanel){
     const showOn = ['overview', 'productmix', 'timing'];
     filterPanel.style.display = showOn.includes(tab) ? '' : 'none';
+  }
+
+  // Charts created while their tab was hidden (display:none) can get stuck at a
+  // degenerate size, since their container had zero width at creation time.
+  // A plain .resize() doesn't always recover from this, so force a full rebuild
+  // the moment the Timing tab actually becomes visible.
+  if(tab === 'timing' && (RAW.invoices.length || RAW.items.length)){
+    renderDowChart(lastFilteredInvoices);
+    renderDomChart(lastFilteredInvoices);
   }
 
   setTimeout(() => {
