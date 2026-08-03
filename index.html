@@ -388,10 +388,24 @@
       <div class="tag"><div class="tag-label">Today's Sale</div><div class="tag-value" id="kpiToday">&mdash;</div><div class="tag-trend" id="trendToday"></div></div>
     </div>
 
+    <div class="mini-tags-row" id="profitTagsRow">
+      <div class="mini-tag"><div class="mini-tag-label">Est. Profit</div><div class="mini-tag-value" id="kpiProfit">&mdash;</div></div>
+      <div class="mini-tag"><div class="mini-tag-label">Wholesale Profit</div><div class="mini-tag-value" id="kpiProfitWholesale">&mdash;</div></div>
+      <div class="mini-tag"><div class="mini-tag-label">Retail Profit</div><div class="mini-tag-value" id="kpiProfitRetail">&mdash;</div></div>
+      <div class="mini-tag"><div class="mini-tag-label">Blended Margin</div><div class="mini-tag-value" id="kpiMarginPct">&mdash;</div></div>
+    </div>
+    <div class="hint-text" style="margin-top:-8px; margin-bottom:16px;">Estimated using a flat 10% margin on Wholesale and 35% on Retail &mdash; a rough guide, not actual costed profit.</div>
+
     <div class="section-title"><span class="num">01</span><h2>Sales Over Time</h2></div>
     <div class="grid-2">
       <div class="panel"><h3>Monthly Sales (&#8377;)</h3><canvas id="monthChart"></canvas></div>
       <div class="panel"><h3>Retail vs Wholesale</h3><canvas id="typeChart"></canvas></div>
+    </div>
+
+    <div class="panel">
+      <h3>Wholesale vs Retail Contribution, by Month</h3>
+      <canvas id="mixTrendChart"></canvas>
+      <div class="hint-text">Shows how the sales mix between Wholesale and Retail has shifted over time. Based on full invoice history, independent of the filters above.</div>
     </div>
 
     <div class="panel drilldown-panel" id="drilldownPanel">
@@ -429,6 +443,12 @@
       <h3>&#129518; Qty &times; Rate Mismatch Check</h3>
       <div id="mismatchBody"><div class="alert-item">Loading&hellip;</div></div>
       <div class="hint-text">Flags item rows where Qty &times; Rate doesn't match the Amount billed (more than &#8377;2 difference) &mdash; usually a billing typo.</div>
+    </div>
+
+    <div class="alert-panel calm" id="duplicateInvoicePanel">
+      <h3>&#128064; Duplicate Invoice Check</h3>
+      <div id="duplicateInvoiceBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Flags invoice numbers that show up against more than one customer name &mdash; usually means two separate bills accidentally got the same invoice number.</div>
     </div>
 
     <div class="panel">
@@ -473,6 +493,12 @@
       <h3>First-Purchase Cohorts</h3>
       <canvas id="cohortChart"></canvas>
       <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice customer names.</div>
+    </div>
+
+    <div class="alert-panel calm" id="winbackPanel">
+      <h3>&#127881; Recently Won Back</h3>
+      <div id="winbackBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Customers flagged High Risk or Attention Required who\'ve actually bought again in the last 30 days &mdash; your outreach may be working on these.</div>
     </div>
 
   </div>
@@ -634,6 +660,7 @@ function cleanPayment(t){
   return s || 'Unknown';
 }
 const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MARGIN_RATES = { Wholesale: 0.10, Retail: 0.35 };
 
 function parseInvoiceDate(str){
   if(!str) return null;
@@ -732,6 +759,9 @@ async function loadAll(){
     renderAvgGap();
     renderCohortChart();
     renderChurnAcquisitionTrend();
+    renderMixTrendChart();
+    renderDuplicateInvoices();
+    renderWinback();
     renderMismatches();
     initCompareTab();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
@@ -944,6 +974,24 @@ function renderSalesKPIs(invoices, items){
   document.getElementById('kpiProducts').textContent = Math.round(totalProducts).toLocaleString('en-IN');
   document.getElementById('kpiToday').textContent = fmtINR(todaySales);
   document.getElementById('kpiCustomers').textContent = uniqueCustomers.size.toLocaleString('en-IN');
+  renderProfitPanel(invoices, totalSales);
+}
+
+function renderProfitPanel(invoices, totalSales){
+  let wholesaleProfit = 0, retailProfit = 0;
+  invoices.forEach(r => {
+    const type = cleanSaleType(r['Sale Type']);
+    const paid = num(r['Paid']);
+    if(type === 'Wholesale') wholesaleProfit += paid * MARGIN_RATES.Wholesale;
+    else if(type === 'Retail') retailProfit += paid * MARGIN_RATES.Retail;
+  });
+  const totalProfit = wholesaleProfit + retailProfit;
+  const marginPct = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+
+  document.getElementById('kpiProfit').textContent = fmtINR(totalProfit);
+  document.getElementById('kpiProfitWholesale').textContent = fmtINR(wholesaleProfit);
+  document.getElementById('kpiProfitRetail').textContent = fmtINR(retailProfit);
+  document.getElementById('kpiMarginPct').textContent = marginPct.toFixed(1) + '%';
 }
 
 function trendHTML(pct, compareLabel){
@@ -1135,6 +1183,48 @@ function renderTopCustomers(list){
     </tr>
   `;
   }).join('') + (list.length > 30 ? `<tr><td colspan="7" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+}
+
+function renderWinback(){
+  const combined = [
+    ...RAW.wholesale.map(r => ({...r, __type:'Wholesale'})),
+    ...RAW.retail.map(r => ({...r, __type:'Retail'})),
+  ];
+  const flagged = combined.filter(r => {
+    const f = cleanFlag(r['Flag']);
+    return f.includes('High Risk') || f.includes('Attention');
+  });
+
+  const today = new Date();
+  const winbacks = [];
+  flagged.forEach(cust => {
+    const key = normName(cust['Name']);
+    const purchases = RAW.invoices
+      .filter(r => normName(r['Customer']) === key)
+      .map(r => parseInvoiceDate(r['Date']))
+      .filter(Boolean)
+      .sort((a,b) => b - a);
+    if(!purchases.length) return;
+    const mostRecent = purchases[0];
+    const daysSince = Math.round((today - mostRecent) / (1000*60*60*24));
+    if(daysSince >= 0 && daysSince <= 30){
+      winbacks.push({ name: cust['Name'], type: cust.__type, daysSince, flag: cust['Flag'] });
+    }
+  });
+
+  winbacks.sort((a,b) => a.daysSince - b.daysSince);
+
+  const body = document.getElementById('winbackBody');
+  if(!body) return;
+  if(!winbacks.length){
+    body.innerHTML = '<div class="alert-item">No recent win-backs in the last 30 days.</div>';
+    return;
+  }
+  body.innerHTML = winbacks.map(w => `
+    <div class="alert-item">
+      <b>${w.name}</b> (${w.type}) &mdash; bought again ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}, was flagged ${w.flag}
+    </div>
+  `).join('');
 }
 
 function renderCallList(){
@@ -1456,6 +1546,43 @@ function renderComparison(){
   tbody.innerHTML = rows.map((r, i) => `<tr><td class="num-cell">${i+1}</td><td>${r[0]}</td><td class="num-cell">${r[1]}</td><td class="num-cell">${r[2]}</td><td>${r[3]}</td></tr>`).join('');
 }
 
+function renderMixTrendChart(){
+  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  const wholesaleData = [];
+  const retailData = [];
+  monthsPresent.forEach(m => {
+    const monthInvoices = RAW.invoices.filter(r => r['Month'] === m);
+    let w = 0, r = 0;
+    monthInvoices.forEach(inv => {
+      const type = cleanSaleType(inv['Sale Type']);
+      if(type === 'Wholesale') w += num(inv['Paid']);
+      else if(type === 'Retail') r += num(inv['Paid']);
+    });
+    wholesaleData.push(w);
+    retailData.push(r);
+  });
+
+  destroy('mixTrendChart');
+  charts.mixTrendChart = new Chart(document.getElementById('mixTrendChart'), {
+    type:'bar',
+    data:{
+      labels: monthsPresent,
+      datasets:[
+        { label:'Wholesale', data:wholesaleData, backgroundColor:'#1f3a5f', stack:'mix' },
+        { label:'Retail', data:retailData, backgroundColor:'#c1652f', stack:'mix' },
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{position:'bottom'}},
+      scales:{
+        x:{ stacked:true },
+        y:{ stacked:true, ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } }
+      }
+    }
+  });
+}
+
 function renderCohortChart(){
   const firstMonth = {};
   const monthsSeen = {};
@@ -1624,6 +1751,33 @@ function renderBundles(items){
   }
   body.innerHTML = sorted.map(([pair,count]) => `
     <div class="bundle-item"><span>${pair}</span><span class="bundle-count">${count} invoices</span></div>
+  `).join('');
+}
+
+function renderDuplicateInvoices(){
+  const byInvoice = {};
+  RAW.invoices.forEach(r => {
+    const inv = r['Invoice'];
+    const custRaw = r['Customer'];
+    if(!inv || !custRaw) return;
+    const key = normName(custRaw);
+    byInvoice[inv] = byInvoice[inv] || new Map();
+    if(!byInvoice[inv].has(key)) byInvoice[inv].set(key, custRaw);
+  });
+
+  const duplicates = Object.entries(byInvoice)
+    .filter(([inv, custMap]) => custMap.size > 1)
+    .slice(0, 10);
+
+  const body = document.getElementById('duplicateInvoiceBody');
+  if(!duplicates.length){
+    body.innerHTML = '<div class="alert-item">No duplicate invoice numbers found across different customers.</div>';
+    return;
+  }
+  body.innerHTML = duplicates.map(([inv, custMap]) => `
+    <div class="alert-item">
+      <b>${inv}</b> appears against ${custMap.size} different customers: ${[...custMap.values()].join(', ')}
+    </div>
   `).join('');
 }
 
