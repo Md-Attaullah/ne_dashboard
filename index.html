@@ -378,11 +378,6 @@
       <canvas id="mixTrendChart"></canvas>
       <div class="hint-text">Shows how the sales mix between Wholesale and Retail has shifted over time. Based on full invoice history, independent of the filters above.</div>
     </div>
-    <div class="panel">
-      <h3>Wholesale vs Retail Customer Visits, by Month</h3>
-      <canvas id="visitMixChart"></canvas>
-      <div class="hint-text">Unique customers per month, split by Sale Type &mdash; based on full invoice history, independent of the filters above.</div>
-    </div>
 
     <div class="panel drilldown-panel" id="drilldownPanel">
       <div class="drilldown-head">
@@ -398,6 +393,11 @@
     </div>
     <div class="hint-text">Tip: click any bar in the Monthly Sales chart to see that month's invoices.</div>
 
+    <div class="panel">
+      <h3>Wholesale vs Retail Customer Visits, by Month</h3>
+      <canvas id="visitMixChart"></canvas>
+      <div class="hint-text">Unique customers per month, split by Sale Type &mdash; based on full invoice history, independent of the filters above.</div>
+    </div>
   </div>
 
   <div class="tab-content" data-tab="alerts" id="tab-alerts">
@@ -524,8 +524,8 @@
     <div class="panel">
       <div class="table-wrap">
       <table id="topCustTable">
-        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th></tr></thead>
-        <tbody><tr><td colspan="7" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th><th>Visits</th></tr></thead>
+        <tbody><tr><td colspan="8" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
       </div>
       <div class="hint-text">Click a customer's name to see their purchase history.</div>
@@ -566,7 +566,6 @@
       <div class="hint-text">Counts unique customers (by name) who bought on each calendar day &mdash; not total invoices, so one customer buying twice in a day still counts once.</div>
     </div>
 
-    
   </div>
 
   <div class="tab-content" data-tab="compare" id="tab-compare">
@@ -1147,12 +1146,19 @@ function renderFlagChart(canvasId, list){
 function renderTopCustomers(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No customers match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
+  const visitCounts = {};
+  RAW.invoices.forEach(r => {
+    const n = normName(r['Customer']);
+    if(n) visitCounts[n] = (visitCounts[n]||0) + 1;
+  });
+
   const shown = list.slice(0,30);
   tbody.innerHTML = shown.map((r, i) => {
     const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
+    const visits = visitCounts[normName(r['Name'])] || 0;
     return `
     <tr>
       <td class="num-cell">${i+1}</td>
@@ -1162,9 +1168,10 @@ function renderTopCustomers(list){
       <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
       <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
       <td class="num-cell">${r['Gap'] || '—'}</td>
+      <td class="num-cell">${visits}</td>
     </tr>
   `;
-  }).join('') + (list.length > 30 ? `<tr><td colspan="7" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+  }).join('') + (list.length > 30 ? `<tr><td colspan="8" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
 }
 
 function renderWinback(){
