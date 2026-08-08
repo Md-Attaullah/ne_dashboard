@@ -1143,6 +1143,10 @@ function renderFlagChart(canvasId, list){
   });
 }
 
+function normPhone(phone){
+  return String(phone||'').replace(/\D/g,'');
+}
+
 function renderTopCustomers(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
@@ -1151,14 +1155,14 @@ function renderTopCustomers(list){
   }
   const visitCounts = {};
   RAW.invoices.forEach(r => {
-    const n = normName(r['Customer']);
-    if(n) visitCounts[n] = (visitCounts[n]||0) + 1;
+    const p = normPhone(r['Phone']);
+    if(p) visitCounts[p] = (visitCounts[p]||0) + 1;
   });
 
   const shown = list.slice(0,30);
   tbody.innerHTML = shown.map((r, i) => {
     const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
-    const visits = visitCounts[normName(r['Name'])] || 0;
+    const visits = visitCounts[normPhone(r['Phone'])] || 0;
     return `
     <tr>
       <td class="num-cell">${i+1}</td>
