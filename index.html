@@ -513,6 +513,8 @@
             <option value="sale_asc">Sale: Low &rarr; High</option>
             <option value="gap_desc">Gap: High &rarr; Low</option>
             <option value="gap_asc">Gap: Low &rarr; High</option>
+            <option value="visits_desc">Visits: High &rarr; Low</option>
+            <option value="visits_asc">Visits: Low &rarr; High</option>
             <option value="name_asc">Name: A &rarr; Z</option>
           </select>
         </div>
@@ -909,9 +911,15 @@ function applyCustomerFilters(){
   const wholesaleForChart = (custType === 'Retail') ? [] : RAW.wholesale.filter(matches);
   const retailForChart = (custType === 'Wholesale') ? [] : RAW.retail.filter(matches);
 
+  const visitCounts = {};
+  RAW.invoices.forEach(r => {
+    const p = normPhone(r['Phone']);
+    if(p) visitCounts[p] = (visitCounts[p]||0) + 1;
+  });
+
   let combined = [
-    ...wholesaleForChart.map(r => ({...r, __type:'Wholesale'})),
-    ...retailForChart.map(r => ({...r, __type:'Retail'})),
+    ...wholesaleForChart.map(r => ({...r, __type:'Wholesale', __visits: visitCounts[normPhone(r['Phone'])] || 0})),
+    ...retailForChart.map(r => ({...r, __type:'Retail', __visits: visitCounts[normPhone(r['Phone'])] || 0})),
   ];
 
   combined.sort((a,b) => {
@@ -919,6 +927,8 @@ function applyCustomerFilters(){
     if(sortMode==='sale_asc') return num(a['Sale']) - num(b['Sale']);
     if(sortMode==='gap_desc') return num(b['Gap']) - num(a['Gap']);
     if(sortMode==='gap_asc') return num(a['Gap']) - num(b['Gap']);
+    if(sortMode==='visits_desc') return b.__visits - a.__visits;
+    if(sortMode==='visits_asc') return a.__visits - b.__visits;
     if(sortMode==='name_asc') return (a['Name']||'').localeCompare(b['Name']||'');
     return 0;
   });
@@ -1153,16 +1163,10 @@ function renderTopCustomers(list){
     tbody.innerHTML = '<tr><td colspan="8" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
-  const visitCounts = {};
-  RAW.invoices.forEach(r => {
-    const p = normPhone(r['Phone']);
-    if(p) visitCounts[p] = (visitCounts[p]||0) + 1;
-  });
-
   const shown = list.slice(0,30);
   tbody.innerHTML = shown.map((r, i) => {
     const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
-    const visits = visitCounts[normPhone(r['Phone'])] || 0;
+    const visits = r.__visits || 0;
     return `
     <tr>
       <td class="num-cell">${i+1}</td>
