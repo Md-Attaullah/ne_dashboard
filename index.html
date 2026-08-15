@@ -210,6 +210,11 @@
   .bundle-item{font-size:13px; padding:7px 0; border-bottom:1px solid var(--border); display:flex; justify-content:space-between;}
   .bundle-item:last-child{border-bottom:none;}
   .bundle-count{font-family:'IBM Plex Mono',monospace; color:var(--ink-soft); font-size:12px;}
+  .cross-sell-box{
+    margin-top:14px; padding:10px 12px; background:#fff7ed; border:1px solid #f3ceac; border-radius:8px;
+    font-size:12.5px; color:var(--ink);
+  }
+  [data-theme="dark"] .cross-sell-box{ background:#2a2115; border-color:#4a3820; }
 
   .search-panel{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
   .search-panel input{flex:1; min-width:220px; padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:13px;}
@@ -480,13 +485,40 @@
     <div class="panel">
       <h3>First-Purchase Cohorts</h3>
       <canvas id="cohortChart"></canvas>
-      <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice phone numbers.</div>
+      <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice phone numbers. Click the "Bought Again Later" bar to see who they are.</div>
+    </div>
+
+    <div class="panel drilldown-panel" id="cohortDrilldownPanel">
+      <div class="drilldown-head">
+        <h3 id="cohortDrilldownTitle">Customers who bought again &mdash;</h3>
+        <button class="drilldown-close" onclick="closeCohortDrilldown()">Close &times;</button>
+      </div>
+      <div class="table-wrap">
+        <table id="cohortDrilldownTable">
+          <thead><tr>
+            <th>#</th>
+            <th data-col="name" onclick="sortCohortTable('name')">Name</th>
+            <th data-col="phone" onclick="sortCohortTable('phone')">Phone</th>
+            <th data-col="type" onclick="sortCohortTable('type')">Type</th>
+            <th data-col="firstpurchase" onclick="sortCohortTable('firstpurchase')">First Purchase</th>
+            <th data-col="lastpurchase" onclick="sortCohortTable('lastpurchase')">Last Purchase</th>
+            <th data-col="visits" onclick="sortCohortTable('visits')">Total Visits</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>Win-Backs by Month</h3>
+      <canvas id="winbackTrendChart"></canvas>
+      <div class="hint-text">Counts purchases that happened 60+ days after that same customer's previous purchase &mdash; i.e. a lapsed customer coming back, attributed to the month they returned.</div>
     </div>
 
     <div class="alert-panel calm" id="winbackPanel">
       <h3>&#127881; Recently Won Back</h3>
       <div id="winbackBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Customers flagged High Risk or Attention Required who\'ve actually bought again in the last 30 days &mdash; your outreach may be working on these.</div>
+      <div class="hint-text">Customers flagged High Risk or Attention Required who've actually bought again in the last 30 days &mdash; your outreach may be working on these.</div>
     </div>
 
   </div>
@@ -548,6 +580,7 @@
         </div>
         <canvas id="timelineChart" height="90"></canvas>
         <div id="timelineEmpty" class="timeline-empty" style="display:none;">No matching invoice history found for this name (name spelling may differ between the customer list and invoices).</div>
+        <div id="crossSellBody"></div>
       </div>
     </div>
   </div>
@@ -761,6 +794,7 @@ async function loadAll(){
     renderVisitMixChart();
     renderVisitMixChart();
     renderWinback();
+    renderWinbackTrend();
     renderMismatches();
     initCompareTab();
     statusEl.textContent = `Loaded \u2713 (${invoices.length} invoices)`;
@@ -1285,6 +1319,38 @@ function renderWinback(){
   `).join('');
 }
 
+function renderWinbackTrend(){
+  const purchaseDates = {};
+  RAW.invoices.forEach(r => {
+    const n = normPhone(r['Phone']);
+    const d = parseInvoiceDate(r['Date']);
+    if(!n || !d) return;
+    (purchaseDates[n] = purchaseDates[n] || []).push(d);
+  });
+  Object.values(purchaseDates).forEach(arr => arr.sort((a,b)=>a-b));
+
+  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  const winbackCounts = monthsPresent.map(() => 0);
+
+  Object.values(purchaseDates).forEach(dates => {
+    for(let i=1;i<dates.length;i++){
+      const gapDays = Math.round((dates[i] - dates[i-1]) / (1000*60*60*24));
+      if(gapDays >= 60){
+        const m = MONTH_ORDER[dates[i].getMonth()];
+        const idx = monthsPresent.indexOf(m);
+        if(idx !== -1) winbackCounts[idx]++;
+      }
+    }
+  });
+
+  destroy('winbackTrendChart');
+  charts.winbackTrendChart = new Chart(document.getElementById('winbackTrendChart'), {
+    type:'bar',
+    data:{ labels: monthsPresent, datasets:[{ label:'Win-Backs', data:winbackCounts, backgroundColor:'#2f8f5b' }] },
+    options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ precision:0 } } } }
+  });
+}
+
 function renderCallList(){
   const wholesaleOnly = RAW.wholesale.map(r => ({...r, __type:'Wholesale'}));
   const allNeedsCall = wholesaleOnly
@@ -1742,9 +1808,13 @@ function renderMixTrendChart(){
   });
 }
 
+let cohortPurchaseData = {}; // phone -> { dates:[...], name, phone, type }
+
 function renderCohortChart(){
   const firstMonth = {};
   const monthsSeen = {};
+  cohortPurchaseData = {};
+
   RAW.invoices.forEach(r => {
     const n = normPhone(r['Phone']);
     if(!n) return;
@@ -1754,7 +1824,12 @@ function renderCohortChart(){
     monthsSeen[n].add(m);
     const idx = MONTH_ORDER.indexOf(m);
     if(firstMonth[n]===undefined || idx < MONTH_ORDER.indexOf(firstMonth[n])) firstMonth[n] = m;
+
+    const d = parseInvoiceDate(r['Date']);
+    if(!cohortPurchaseData[n]) cohortPurchaseData[n] = { dates:[], name:r['Customer'], phone:r['Phone'], type:cleanSaleType(r['Sale Type']) };
+    if(d) cohortPurchaseData[n].dates.push(d);
   });
+  Object.values(cohortPurchaseData).forEach(c => c.dates.sort((a,b)=>a-b));
 
   const monthsPresent = MONTH_ORDER.filter(m => Object.values(firstMonth).includes(m));
   const cohortSize = monthsPresent.map(m => Object.keys(firstMonth).filter(n => firstMonth[n]===m).length);
@@ -1773,8 +1848,90 @@ function renderCohortChart(){
         { label:'Bought Again Later', data:retained, backgroundColor:'#1f3a5f' },
       ]
     },
-    options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{ ticks:{ precision:0 } } } }
+    options:{
+      responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{ ticks:{ precision:0 } } },
+      onClick:(evt, elements) => {
+        if(!elements.length) return;
+        const el = elements[0];
+        if(el.datasetIndex !== 1) return; // only "Bought Again Later" is clickable
+        const month = monthsPresent[el.index];
+        const phones = Object.keys(firstMonth).filter(n => firstMonth[n]===month && monthsSeen[n].size > 1);
+        showCohortDrilldown(month, phones);
+      }
+    }
   });
+}
+
+function showCohortDrilldown(month, phones){
+  const list = phones.map(p => {
+    const c = cohortPurchaseData[p];
+    return {
+      name: c.name, phone: c.phone, type: c.type,
+      firstPurchase: c.dates[0], lastPurchase: c.dates[c.dates.length-1],
+      visits: c.dates.length,
+    };
+  });
+  lastCohortList = list;
+  cohortSortState = { col:null, dir:0 };
+  updateSortIndicators('cohortDrilldownTable', null, 0);
+  document.getElementById('cohortDrilldownTitle').textContent = `Bought again after first purchase in ${month} (${list.length})`;
+  renderCohortDrilldownRows(list);
+  document.getElementById('cohortDrilldownPanel').style.display = 'block';
+}
+
+function renderCohortDrilldownRows(list){
+  const tbody = document.querySelector('#cohortDrilldownTable tbody');
+  if(!list.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No customers to show.</td></tr>';
+    return;
+  }
+  const fmtDate = d => d ? d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : '\u2014';
+  tbody.innerHTML = list.map((c, i) => `
+    <tr>
+      <td class="num-cell">${i+1}</td>
+      <td>${c.name || '\u2014'}</td>
+      <td class="num-cell">${c.phone || '\u2014'}${waButton(c.phone, c.name)}</td>
+      <td>${c.type || '\u2014'}</td>
+      <td>${fmtDate(c.firstPurchase)}</td>
+      <td>${fmtDate(c.lastPurchase)}</td>
+      <td class="num-cell">${c.visits}</td>
+    </tr>
+  `).join('');
+}
+function closeCohortDrilldown(){
+  document.getElementById('cohortDrilldownPanel').style.display = 'none';
+}
+
+let lastCohortList = [];
+let cohortSortState = { col:null, dir:0 };
+const COHORT_SORT_GETTERS = {
+  name: c => (c.name||'').toLowerCase(),
+  phone: c => normPhone(c.phone),
+  type: c => c.type || '',
+  firstpurchase: c => c.firstPurchase ? c.firstPurchase.getTime() : 0,
+  lastpurchase: c => c.lastPurchase ? c.lastPurchase.getTime() : 0,
+  visits: c => c.visits || 0,
+};
+function sortCohortTable(col){
+  if(cohortSortState.col === col){
+    cohortSortState.dir = (cohortSortState.dir + 1) % 3;
+  } else {
+    cohortSortState.col = col;
+    cohortSortState.dir = 1;
+  }
+  updateSortIndicators('cohortDrilldownTable', col, cohortSortState.dir);
+  if(cohortSortState.dir === 0){
+    renderCohortDrilldownRows(lastCohortList);
+    return;
+  }
+  const getter = COHORT_SORT_GETTERS[col];
+  const sorted = [...lastCohortList].sort((a,b) => {
+    const va = getter(a), vb = getter(b);
+    if(va < vb) return cohortSortState.dir === 1 ? -1 : 1;
+    if(va > vb) return cohortSortState.dir === 1 ? 1 : -1;
+    return 0;
+  });
+  renderCohortDrilldownRows(sorted);
 }
 
 function renderChurnChartFor(saleType, canvasId){
@@ -2000,10 +2157,12 @@ function showTimeline(name){
   document.getElementById('timelinePanel').style.display = 'block';
   const emptyEl = document.getElementById('timelineEmpty');
   const canvasEl = document.getElementById('timelineChart');
+  const crossSellEl = document.getElementById('crossSellBody');
 
   if(!matches.length){
     emptyEl.style.display = 'block';
     canvasEl.style.display = 'none';
+    if(crossSellEl) crossSellEl.innerHTML = '';
     return;
   }
   emptyEl.style.display = 'none';
@@ -2018,7 +2177,53 @@ function showTimeline(name){
     },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } } } }
   });
+
+  if(crossSellEl) renderCrossSell(matches, crossSellEl);
 }
+
+function renderCrossSell(customerInvoices, el){
+  const invoiceNumbers = new Set(customerInvoices.map(r => r['Invoice']).filter(Boolean));
+  const custItemTypes = new Set();
+  RAW.items.forEach(r => {
+    const inv = r['Invoice #'] || r['Invoice'];
+    if(invoiceNumbers.has(inv)) custItemTypes.add(r['Type'] || 'Unknown');
+  });
+
+  if(!custItemTypes.size){
+    el.innerHTML = '';
+    return;
+  }
+
+  // Global co-occurrence: for each item type this customer already owns,
+  // find what else tends to be bought alongside it that they DON'T have yet.
+  const byInvoice = {};
+  RAW.items.forEach(r => {
+    const inv = r['Invoice #'] || r['Invoice'];
+    if(!inv) return;
+    byInvoice[inv] = byInvoice[inv] || new Set();
+    byInvoice[inv].add(r['Type'] || 'Unknown');
+  });
+
+  const suggestionCounts = {};
+  Object.values(byInvoice).forEach(typeSet => {
+    const types = [...typeSet];
+    types.forEach(a => {
+      if(!custItemTypes.has(a)) return;
+      types.forEach(b => {
+        if(a === b || custItemTypes.has(b)) return;
+        suggestionCounts[b] = (suggestionCounts[b]||0) + 1;
+      });
+    });
+  });
+
+  const sorted = Object.entries(suggestionCounts).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  if(!sorted.length){
+    el.innerHTML = '';
+    return;
+  }
+  el.innerHTML = `<div class="cross-sell-box">&#128161; Based on what they've bought (${[...custItemTypes].join(', ')}), often paired with: <b>${sorted.map(s=>s[0]).join(', ')}</b></div>`;
+}
+
 function closeTimeline(){
   document.getElementById('timelinePanel').style.display = 'none';
 }
