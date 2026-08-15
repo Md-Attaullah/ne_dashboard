@@ -178,6 +178,10 @@
   table{width:100%; border-collapse:collapse; font-size:13px; min-width:520px;}
   th,td{text-align:left; padding:10px 8px; border-bottom:1px solid var(--border); white-space:nowrap;}
   th{text-transform:uppercase; font-size:10.5px; letter-spacing:0.04em; color:var(--ink-soft); font-weight:600; border-bottom:1px solid var(--border);}
+  th[data-col]{cursor:pointer; user-select:none; white-space:nowrap;}
+  th[data-col]:hover{color:var(--navy);}
+  th[data-col].sort-asc::after{content:' \25B2'; font-size:8px;}
+  th[data-col].sort-desc::after{content:' \25BC'; font-size:8px;}
   td.num-cell{font-family:'IBM Plex Mono', monospace;}
   tr:hover td{background:var(--bg-soft);}
   .empty-note{color:var(--ink-soft); font-style:italic; font-size:13px; padding:24px 0; text-align:center; white-space:normal;}
@@ -376,7 +380,13 @@
     <div class="panel">
       <h3>Wholesale vs Retail Contribution, by Month</h3>
       <canvas id="mixTrendChart"></canvas>
-      <div class="hint-text">Shows how the sales mix between Wholesale and Retail has shifted over time. Based on full invoice history, independent of the filters above.</div>
+      <div class="hint-text">Shows how the sales mix between Wholesale and Retail has shifted over time. Based on full invoice history, independent of the filters above. Click any bar to see that month's invoices.</div>
+    </div>
+
+    <div class="panel">
+      <h3>Wholesale vs Retail Customer Visits, by Month</h3>
+      <canvas id="visitMixChart"></canvas>
+      <div class="hint-text">Unique customers per month, split by Sale Type &mdash; based on full invoice history, independent of the filters above. Click any bar to see that month's invoices.</div>
     </div>
 
     <div class="panel drilldown-panel" id="drilldownPanel">
@@ -386,18 +396,20 @@
       </div>
       <div class="table-wrap">
         <table id="drilldownTable">
-          <thead><tr><th>#</th><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th data-col="invoice" onclick="sortInvoiceTable('drilldown','invoice')">Invoice</th>
+            <th data-col="customer" onclick="sortInvoiceTable('drilldown','customer')">Customer</th>
+            <th data-col="date" onclick="sortInvoiceTable('drilldown','date')">Date</th>
+            <th data-col="saletype" onclick="sortInvoiceTable('drilldown','saletype')">Sale Type</th>
+            <th data-col="payment" onclick="sortInvoiceTable('drilldown','payment')">Payment</th>
+            <th data-col="paid" onclick="sortInvoiceTable('drilldown','paid')">Paid (&#8377;)</th>
+          </tr></thead>
           <tbody></tbody>
         </table>
       </div>
     </div>
-    <div class="hint-text">Tip: click any bar in the Monthly Sales chart to see that month's invoices.</div>
-
-    <div class="panel">
-      <h3>Wholesale vs Retail Customer Visits, by Month</h3>
-      <canvas id="visitMixChart"></canvas>
-      <div class="hint-text">Unique customers per month, split by Sale Type &mdash; based on full invoice history, independent of the filters above.</div>
-    </div>
+    <div class="hint-text">Tip: click any bar in a monthly chart above to see that month's (and segment's) invoices.</div>
   </div>
 
   <div class="tab-content" data-tab="alerts" id="tab-alerts">
@@ -468,7 +480,7 @@
     <div class="panel">
       <h3>First-Purchase Cohorts</h3>
       <canvas id="cohortChart"></canvas>
-      <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice customer names.</div>
+      <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice phone numbers.</div>
     </div>
 
     <div class="alert-panel calm" id="winbackPanel">
@@ -506,18 +518,6 @@
           Search Name
           <input type="text" id="filterSearch" placeholder="e.g. Sameer">
         </div>
-        <div class="filter-field">
-          Sort By
-          <select id="filterSort">
-            <option value="sale_desc">Sale: High &rarr; Low</option>
-            <option value="sale_asc">Sale: Low &rarr; High</option>
-            <option value="gap_desc">Gap: High &rarr; Low</option>
-            <option value="gap_asc">Gap: Low &rarr; High</option>
-            <option value="visits_desc">Visits: High &rarr; Low</option>
-            <option value="visits_asc">Visits: Low &rarr; High</option>
-            <option value="name_asc">Name: A &rarr; Z</option>
-          </select>
-        </div>
       </div>
       <div class="result-note" id="custResultNote"></div>
       </div>
@@ -526,7 +526,16 @@
     <div class="panel">
       <div class="table-wrap">
       <table id="topCustTable">
-        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Type</th><th>Lifetime Sale (&#8377;)</th><th>Last Purchase</th><th>Gap (days)</th><th>Visits</th></tr></thead>
+        <thead><tr>
+          <th>#</th>
+          <th data-col="name" onclick="sortCustomerTable('name')">Name</th>
+          <th data-col="phone" onclick="sortCustomerTable('phone')">Phone</th>
+          <th data-col="type" onclick="sortCustomerTable('type')">Type</th>
+          <th data-col="sale" onclick="sortCustomerTable('sale')">Lifetime Sale (&#8377;)</th>
+          <th data-col="lastpurchase" onclick="sortCustomerTable('lastpurchase')">Last Purchase</th>
+          <th data-col="gap" onclick="sortCustomerTable('gap')">Gap (days)</th>
+          <th data-col="visits" onclick="sortCustomerTable('visits')">Visits</th>
+        </tr></thead>
         <tbody><tr><td colspan="8" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
       </div>
@@ -605,7 +614,15 @@
       </div>
       <div class="table-wrap">
         <table id="invoiceSearchTable">
-          <thead><tr><th>#</th><th>Invoice</th><th>Customer</th><th>Date</th><th>Sale Type</th><th>Payment</th><th>Paid (&#8377;)</th></tr></thead>
+          <thead><tr>
+            <th>#</th>
+            <th data-col="invoice" onclick="sortInvoiceTable('search','invoice')">Invoice</th>
+            <th data-col="customer" onclick="sortInvoiceTable('search','customer')">Customer</th>
+            <th data-col="date" onclick="sortInvoiceTable('search','date')">Date</th>
+            <th data-col="saletype" onclick="sortInvoiceTable('search','saletype')">Sale Type</th>
+            <th data-col="payment" onclick="sortInvoiceTable('search','payment')">Payment</th>
+            <th data-col="paid" onclick="sortInvoiceTable('search','paid')">Paid (&#8377;)</th>
+          </tr></thead>
           <tbody><tr><td colspan="7" class="empty-note">Type above to search across all invoices.</td></tr></tbody>
         </table>
       </div>
@@ -811,7 +828,6 @@ function initFilters(){
   document.getElementById('filterTo').onchange = applyFilters;
   document.getElementById('filterCustType').onchange = applyCustomerFilters;
   document.getElementById('filterFlag').onchange = applyCustomerFilters;
-  document.getElementById('filterSort').onchange = applyCustomerFilters;
   document.getElementById('filterSearch').oninput = applyCustomerFilters;
 }
 
@@ -838,7 +854,6 @@ function resetCustomerFilters(){
   document.getElementById('filterCustType').value = 'All';
   document.getElementById('filterFlag').value = 'All';
   document.getElementById('filterSearch').value = '';
-  document.getElementById('filterSort').value = 'sale_desc';
   applyCustomerFilters();
 }
 
@@ -900,7 +915,6 @@ function applyCustomerFilters(){
   const custType = document.getElementById('filterCustType').value;
   const flag = document.getElementById('filterFlag').value;
   const search = document.getElementById('filterSearch').value.trim().toLowerCase();
-  const sortMode = document.getElementById('filterSort').value;
 
   const matches = (r) => {
     if(flag !== 'All' && cleanFlag(r['Flag']) !== flag) return false;
@@ -922,16 +936,8 @@ function applyCustomerFilters(){
     ...retailForChart.map(r => ({...r, __type:'Retail', __visits: visitCounts[normPhone(r['Phone'])] || 0})),
   ];
 
-  combined.sort((a,b) => {
-    if(sortMode==='sale_desc') return num(b['Sale']) - num(a['Sale']);
-    if(sortMode==='sale_asc') return num(a['Sale']) - num(b['Sale']);
-    if(sortMode==='gap_desc') return num(b['Gap']) - num(a['Gap']);
-    if(sortMode==='gap_asc') return num(a['Gap']) - num(b['Gap']);
-    if(sortMode==='visits_desc') return b.__visits - a.__visits;
-    if(sortMode==='visits_asc') return a.__visits - b.__visits;
-    if(sortMode==='name_asc') return (a['Name']||'').localeCompare(b['Name']||'');
-    return 0;
-  });
+  // Default order: highest lifetime sale first. Click a table column header to change it.
+  combined.sort((a,b) => num(b['Sale']) - num(a['Sale']));
 
   renderTopCustomers(combined);
 
@@ -1157,7 +1163,17 @@ function normPhone(phone){
   return String(phone||'').replace(/\D/g,'');
 }
 
+let lastCustomerList = [];
+let customerSortState = { col:null, dir:0 };
+
 function renderTopCustomers(list){
+  lastCustomerList = list;
+  customerSortState = { col:null, dir:0 };
+  updateSortIndicators('topCustTable', null, 0);
+  renderTopCustomersRows(list);
+}
+
+function renderTopCustomersRows(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
     tbody.innerHTML = '<tr><td colspan="8" class="empty-note">No customers match the current filters.</td></tr>';
@@ -1180,6 +1196,51 @@ function renderTopCustomers(list){
     </tr>
   `;
   }).join('') + (list.length > 30 ? `<tr><td colspan="8" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+}
+
+function updateSortIndicators(tableId, activeCol, dir){
+  document.querySelectorAll(`#${tableId} thead th[data-col]`).forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    if(dir && th.dataset.col === activeCol){
+      th.classList.add(dir === 1 ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+const CUSTOMER_SORT_GETTERS = {
+  name: r => (r['Name']||'').toLowerCase(),
+  phone: r => normPhone(r['Phone']),
+  type: r => r.__type || '',
+  sale: r => num(r['Sale']),
+  lastpurchase: r => {
+    const d = parseInvoiceDate(r['Last Purchase Date'] || r['Last_purchase_date']);
+    return d ? d.getTime() : 0;
+  },
+  gap: r => num(r['Gap']),
+  visits: r => r.__visits || 0,
+};
+
+function sortCustomerTable(col){
+  if(customerSortState.col === col){
+    customerSortState.dir = (customerSortState.dir + 1) % 3;
+  } else {
+    customerSortState.col = col;
+    customerSortState.dir = 1;
+  }
+  updateSortIndicators('topCustTable', col, customerSortState.dir);
+
+  if(customerSortState.dir === 0){
+    renderTopCustomersRows(lastCustomerList);
+    return;
+  }
+  const getter = CUSTOMER_SORT_GETTERS[col];
+  const sorted = [...lastCustomerList].sort((a,b) => {
+    const va = getter(a), vb = getter(b);
+    if(va < vb) return customerSortState.dir === 1 ? -1 : 1;
+    if(va > vb) return customerSortState.dir === 1 ? 1 : -1;
+    return 0;
+  });
+  renderTopCustomersRows(sorted);
 }
 
 function renderWinback(){
@@ -1364,7 +1425,7 @@ function renderVisitMixChart(){
     const retailNames = new Set();
     monthInvoices.forEach(inv => {
       const type = cleanSaleType(inv['Sale Type']);
-      const n = normName(inv['Customer']);
+      const n = normPhone(inv['Phone']);
       if(!n) return;
       if(type === 'Wholesale') wholesaleNames.add(n);
       else if(type === 'Retail') retailNames.add(n);
@@ -1389,13 +1450,35 @@ function renderVisitMixChart(){
       scales:{
         x:{ stacked:true },
         y:{ stacked:true, ticks:{ precision:0 } }
+      },
+      onClick:(evt, elements) => {
+        if(!elements.length) return;
+        const idx = elements[0].index;
+        const dsIndex = elements[0].datasetIndex;
+        const label = monthsPresent[idx];
+        const clickedType = dsIndex === 0 ? 'Wholesale' : 'Retail';
+        const invoicesForMonth = RAW.invoices.filter(r => r['Month']===label && cleanSaleType(r['Sale Type'])===clickedType);
+        showDrilldown(`${label} \u2014 ${clickedType}`, invoicesForMonth);
       }
     }
   });
 }
 
+let lastDrilldownInvoices = [];
+let lastDrilldownMonth = '';
+let drilldownSortState = { col:null, dir:0 };
+
 function showDrilldown(monthLabel, invoicesForMonth){
+  lastDrilldownInvoices = invoicesForMonth;
+  lastDrilldownMonth = monthLabel;
+  drilldownSortState = { col:null, dir:0 };
+  updateSortIndicators('drilldownTable', null, 0);
   document.getElementById('drilldownTitle').textContent = `Invoices for ${monthLabel} (${invoicesForMonth.length})`;
+  renderDrilldownRows(invoicesForMonth);
+  document.getElementById('drilldownPanel').style.display = 'block';
+}
+
+function renderDrilldownRows(invoicesForMonth){
   const tbody = document.querySelector('#drilldownTable tbody');
   tbody.innerHTML = invoicesForMonth.slice(0,100).map((r, i) => `
     <tr>
@@ -1408,10 +1491,46 @@ function showDrilldown(monthLabel, invoicesForMonth){
       <td class="num-cell">${fmtINR(num(r['Paid']))}</td>
     </tr>
   `).join('') + (invoicesForMonth.length > 100 ? `<tr><td colspan="7" class="empty-note">+ ${invoicesForMonth.length-100} more invoices this month</td></tr>` : '');
-  document.getElementById('drilldownPanel').style.display = 'block';
 }
 function closeDrilldown(){
   document.getElementById('drilldownPanel').style.display = 'none';
+}
+
+const INVOICE_SORT_GETTERS = {
+  invoice: r => (r['Invoice']||'').toLowerCase(),
+  customer: r => (r['Customer']||'').toLowerCase(),
+  date: r => { const d = parseInvoiceDate(r['Date']); return d ? d.getTime() : 0; },
+  saletype: r => cleanSaleType(r['Sale Type']),
+  payment: r => cleanPayment(r['Payment Mode']),
+  paid: r => num(r['Paid']),
+};
+
+function sortInvoiceTable(kind, col){
+  const state = kind === 'search' ? invoiceSearchSortState : drilldownSortState;
+  if(state.col === col){
+    state.dir = (state.dir + 1) % 3;
+  } else {
+    state.col = col;
+    state.dir = 1;
+  }
+  const tableId = kind === 'search' ? 'invoiceSearchTable' : 'drilldownTable';
+  updateSortIndicators(tableId, col, state.dir);
+
+  const source = kind === 'search' ? lastInvoiceSearchResults : lastDrilldownInvoices;
+  const renderFn = kind === 'search' ? renderInvoiceSearchRows : renderDrilldownRows;
+
+  if(state.dir === 0){
+    renderFn(source);
+    return;
+  }
+  const getter = INVOICE_SORT_GETTERS[col];
+  const sorted = [...source].sort((a,b) => {
+    const va = getter(a), vb = getter(b);
+    if(va < vb) return state.dir === 1 ? -1 : 1;
+    if(va > vb) return state.dir === 1 ? 1 : -1;
+    return 0;
+  });
+  renderFn(sorted);
 }
 
 function normName(n){ return (n||'').toString().trim().toLowerCase(); }
@@ -1609,6 +1728,15 @@ function renderMixTrendChart(){
       scales:{
         x:{ stacked:true },
         y:{ stacked:true, ticks:{ callback:v=>'\u20b9'+v.toLocaleString('en-IN') } }
+      },
+      onClick:(evt, elements) => {
+        if(!elements.length) return;
+        const idx = elements[0].index;
+        const dsIndex = elements[0].datasetIndex;
+        const label = monthsPresent[idx];
+        const clickedType = dsIndex === 0 ? 'Wholesale' : 'Retail';
+        const invoicesForMonth = RAW.invoices.filter(r => r['Month']===label && cleanSaleType(r['Sale Type'])===clickedType);
+        showDrilldown(`${label} \u2014 ${clickedType}`, invoicesForMonth);
       }
     }
   });
@@ -1618,7 +1746,7 @@ function renderCohortChart(){
   const firstMonth = {};
   const monthsSeen = {};
   RAW.invoices.forEach(r => {
-    const n = normName(r['Customer']);
+    const n = normPhone(r['Phone']);
     if(!n) return;
     const m = r['Month'];
     if(!m) return;
@@ -1818,18 +1946,34 @@ function renderMismatches(){
   `).join('');
 }
 
+let lastInvoiceSearchResults = [];
+let invoiceSearchSortState = { col:null, dir:0 };
+
 function runInvoiceSearch(){
   const q = document.getElementById('invoiceSearchInput').value.trim().toLowerCase();
   const tbody = document.querySelector('#invoiceSearchTable tbody');
+  invoiceSearchSortState = { col:null, dir:0 };
+  updateSortIndicators('invoiceSearchTable', null, 0);
   if(!q){
+    lastInvoiceSearchResults = [];
     tbody.innerHTML = '<tr><td colspan="7" class="empty-note">Type above to search across all invoices.</td></tr>';
     return;
   }
   const matches = RAW.invoices.filter(r =>
     (r['Invoice']||'').toLowerCase().includes(q) || (r['Customer']||'').toLowerCase().includes(q)
   ).slice(0,50);
+  lastInvoiceSearchResults = matches;
   if(!matches.length){
     tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No invoices match &ldquo;' + q + '&rdquo;.</td></tr>';
+    return;
+  }
+  renderInvoiceSearchRows(matches);
+}
+
+function renderInvoiceSearchRows(matches){
+  const tbody = document.querySelector('#invoiceSearchTable tbody');
+  if(!matches.length){
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-note">No invoices match the current search.</td></tr>';
     return;
   }
   tbody.innerHTML = matches.map((r, i) => `
