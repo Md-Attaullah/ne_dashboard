@@ -1290,17 +1290,19 @@ function renderWinback(){
   const today = new Date();
   const winbacks = [];
   flagged.forEach(cust => {
-    const key = normName(cust['Name']);
+    const key = normPhone(cust['Phone']);
     const purchases = RAW.invoices
-      .filter(r => normName(r['Customer']) === key)
+      .filter(r => normPhone(r['Phone']) === key)
       .map(r => parseInvoiceDate(r['Date']))
       .filter(Boolean)
       .sort((a,b) => b - a);
-    if(!purchases.length) return;
+    if(purchases.length < 2) return; // need a prior purchase to measure a "gap" at all
     const mostRecent = purchases[0];
+    const previous = purchases[1];
     const daysSince = Math.round((today - mostRecent) / (1000*60*60*24));
+    const gapDays = Math.round((mostRecent - previous) / (1000*60*60*24));
     if(daysSince >= 0 && daysSince <= 30){
-      winbacks.push({ name: cust['Name'], type: cust.__type, daysSince, flag: cust['Flag'] });
+      winbacks.push({ name: cust['Name'], type: cust.__type, daysSince, gapDays, flag: cust['Flag'] });
     }
   });
 
@@ -1314,7 +1316,7 @@ function renderWinback(){
   }
   body.innerHTML = winbacks.map(w => `
     <div class="alert-item">
-      <b>${w.name}</b> (${w.type}) &mdash; bought again ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}, was flagged ${w.flag}
+      <b>${w.name}</b> (${w.type}) &mdash; was away <b>${w.gapDays}d</b>, came back ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}, was flagged ${w.flag}
     </div>
   `).join('');
 }
