@@ -137,6 +137,19 @@
   .tab-content{display:none;}
   .tab-content.active{display:block;}
 
+  .sub-tab-nav{
+    display:inline-flex; gap:4px; margin:14px 0 18px; background:var(--bg-soft);
+    border:1px solid var(--border); border-radius:10px; padding:4px;
+  }
+  .sub-tab-btn{
+    background:none; border:none; padding:8px 18px; font-family:inherit; font-size:12.5px; font-weight:600;
+    color:var(--ink-soft); cursor:pointer; border-radius:7px;
+  }
+  .sub-tab-btn:hover{color:var(--ink);}
+  .sub-tab-btn.active{color:#fff; background:var(--navy);}
+  .sub-tab-content{display:none;}
+  .sub-tab-content.active{display:block;}
+
 
   .tags-row{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:26px; }
   .tag{ background:var(--bg); border:1px solid var(--border); border-left:3px solid var(--navy); border-radius:10px; padding:16px 18px; }
@@ -470,22 +483,73 @@
   <div class="tab-content" data-tab="retention" id="tab-retention">
     <div class="section-title"><span class="num">04</span><h2>Customer Retention</h2></div>
 
-    <div class="mini-tags-row" id="gapTagsRow">
-      <div class="mini-tag"><div class="mini-tag-label">Avg Gap &mdash; Wholesale</div><div class="mini-tag-value" id="gapWholesale">&mdash;</div></div>
-      <div class="mini-tag"><div class="mini-tag-label">Avg Gap &mdash; Retail</div><div class="mini-tag-value" id="gapRetail">&mdash;</div></div>
-      <div class="mini-tag"><div class="mini-tag-label">Repeat Rate &mdash; Wholesale</div><div class="mini-tag-value" id="repeatPctWholesale">&mdash;</div></div>
-      <div class="mini-tag"><div class="mini-tag-label">Repeat Rate &mdash; Retail</div><div class="mini-tag-value" id="repeatPctRetail">&mdash;</div></div>
+    <div class="sub-tab-nav" id="retentionSubNav">
+      <button class="sub-tab-btn active" data-subtab="wholesale" onclick="switchRetentionSubTab('wholesale')">Wholesale</button>
+      <button class="sub-tab-btn" data-subtab="retail" onclick="switchRetentionSubTab('retail')">Retail</button>
     </div>
 
-    <div class="grid-2b">
-      <div class="panel"><h3>Repeat vs One-Time &mdash; Wholesale</h3><canvas id="repeatChartWholesale"></canvas></div>
-      <div class="panel"><h3>Repeat vs One-Time &mdash; Retail</h3><canvas id="repeatChartRetail"></canvas></div>
+    <div class="sub-tab-content active" data-subtab="wholesale" id="retention-wholesale">
+      <div class="mini-tags-row">
+        <div class="mini-tag"><div class="mini-tag-label">Avg Gap</div><div class="mini-tag-value" id="gapWholesale">&mdash;</div></div>
+        <div class="mini-tag"><div class="mini-tag-label">Repeat Rate</div><div class="mini-tag-value" id="repeatPctWholesale">&mdash;</div></div>
+      </div>
+
+      <div class="panel"><h3>Repeat vs One-Time</h3><canvas id="repeatChartWholesale"></canvas></div>
+
+      <div class="panel">
+        <h3>New vs At-Risk, by Month</h3>
+        <canvas id="churnChartWholesale2"></canvas>
+        <div class="hint-text">"At-risk" means 60+ days since last purchase as of that month's end.</div>
+      </div>
+
+      <div class="panel">
+        <h3>First-Purchase Cohorts</h3>
+        <canvas id="cohortChartWholesale"></canvas>
+        <div class="hint-text">Cohort = month of a customer's first invoice. Click the "Bought Again Later" bar to see who they are.</div>
+      </div>
+
+      <div class="panel">
+        <h3>Win-Backs by Month</h3>
+        <canvas id="winbackTrendChartWholesale"></canvas>
+      </div>
+
+      <div class="alert-panel calm" id="winbackPanelWholesale">
+        <h3>&#127881; Recently Won Back</h3>
+        <div id="winbackBodyWholesale"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Flagged High Risk or Attention Required, but bought again in the last 30 days.</div>
+      </div>
     </div>
 
-    <div class="panel">
-      <h3>First-Purchase Cohorts</h3>
-      <canvas id="cohortChart"></canvas>
-      <div class="hint-text">Cohort = month of a customer's first invoice. Shows how many went on to buy again in a later month, based on matching invoice phone numbers. Click the "Bought Again Later" bar to see who they are.</div>
+    <div class="sub-tab-content" data-subtab="retail" id="retention-retail">
+      <div class="mini-tags-row">
+        <div class="mini-tag"><div class="mini-tag-label">Avg Gap</div><div class="mini-tag-value" id="gapRetail">&mdash;</div></div>
+        <div class="mini-tag"><div class="mini-tag-label">Repeat Rate</div><div class="mini-tag-value" id="repeatPctRetail">&mdash;</div></div>
+      </div>
+
+      <div class="panel"><h3>Repeat vs One-Time</h3><canvas id="repeatChartRetail"></canvas></div>
+
+      <div class="panel">
+        <h3>New vs At-Risk, by Month</h3>
+        <canvas id="churnChartRetail2"></canvas>
+        <div class="hint-text">"At-risk" means 60+ days since last purchase as of that month's end.</div>
+      </div>
+
+      <div class="panel">
+        <h3>First-Purchase Cohorts</h3>
+        <canvas id="cohortChartRetail"></canvas>
+        <div class="hint-text">Cohort = month of a customer's first invoice. Click the "Bought Again Later" bar to see who they are.</div>
+      </div>
+
+      <div class="panel">
+        <h3>Win-Backs by Month</h3>
+        <canvas id="winbackTrendChartRetail"></canvas>
+      </div>
+
+      <div class="alert-panel calm" id="winbackPanelRetail">
+        <h3>&#127881; Recently Won Back</h3>
+        <div id="winbackBodyRetail"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Flagged High Risk or Attention Required, but bought again in the last 30 days.</div>
+      </div>
     </div>
 
     <div class="panel drilldown-panel" id="cohortDrilldownPanel">
@@ -507,18 +571,6 @@
           <tbody></tbody>
         </table>
       </div>
-    </div>
-
-    <div class="panel">
-      <h3>Win-Backs by Month</h3>
-      <canvas id="winbackTrendChart"></canvas>
-      <div class="hint-text">Counts purchases that happened 60+ days after that same customer's previous purchase &mdash; i.e. a lapsed customer coming back, attributed to the month they returned.</div>
-    </div>
-
-    <div class="alert-panel calm" id="winbackPanel">
-      <h3>&#127881; Recently Won Back</h3>
-      <div id="winbackBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Customers flagged High Risk or Attention Required who've actually bought again in the last 30 days &mdash; your outreach may be working on these.</div>
     </div>
 
   </div>
@@ -1277,15 +1329,14 @@ function sortCustomerTable(col){
   renderTopCustomersRows(sorted);
 }
 
-function renderWinback(){
-  const combined = [
-    ...RAW.wholesale.map(r => ({...r, __type:'Wholesale'})),
-    ...RAW.retail.map(r => ({...r, __type:'Retail'})),
-  ];
-  const flagged = combined.filter(r => {
-    const f = cleanFlag(r['Flag']);
-    return f.includes('High Risk') || f.includes('Attention');
-  });
+function renderWinbackFor(saleType){
+  const source = saleType === 'Wholesale' ? RAW.wholesale : RAW.retail;
+  const flagged = source
+    .map(r => ({...r, __type:saleType}))
+    .filter(r => {
+      const f = cleanFlag(r['Flag']);
+      return f.includes('High Risk') || f.includes('Attention');
+    });
 
   const today = new Date();
   const winbacks = [];
@@ -1296,7 +1347,7 @@ function renderWinback(){
       .map(r => parseInvoiceDate(r['Date']))
       .filter(Boolean)
       .sort((a,b) => b - a);
-    if(purchases.length < 2) return; // need a prior purchase to measure a "gap" at all
+    if(purchases.length < 2) return;
     const mostRecent = purchases[0];
     const previous = purchases[1];
     const daysSince = Math.round((today - mostRecent) / (1000*60*60*24));
@@ -1308,22 +1359,28 @@ function renderWinback(){
 
   winbacks.sort((a,b) => a.daysSince - b.daysSince);
 
-  const body = document.getElementById('winbackBody');
+  const body = document.getElementById(`winbackBody${saleType}`);
   if(!body) return;
   if(!winbacks.length){
-    body.innerHTML = '<div class="alert-item">No recent win-backs in the last 30 days.</div>';
+    body.innerHTML = `<div class="alert-item">No recent win-backs in the last 30 days.</div>`;
     return;
   }
   body.innerHTML = winbacks.map(w => `
     <div class="alert-item">
-      <b>${w.name}</b> (${w.type}) &mdash; was away <b>${w.gapDays}d</b>, came back ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}, was flagged ${w.flag}
+      <b>${w.name}</b> &mdash; was away <b>${w.gapDays}d</b>, came back ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}, was flagged ${w.flag}
     </div>
   `).join('');
 }
 
-function renderWinbackTrend(){
+function renderWinback(){
+  renderWinbackFor('Wholesale');
+  renderWinbackFor('Retail');
+}
+
+function renderWinbackTrendFor(saleType, canvasId){
+  const typeInvoices = RAW.invoices.filter(r => cleanSaleType(r['Sale Type']) === saleType);
   const purchaseDates = {};
-  RAW.invoices.forEach(r => {
+  typeInvoices.forEach(r => {
     const n = normPhone(r['Phone']);
     const d = parseInvoiceDate(r['Date']);
     if(!n || !d) return;
@@ -1331,7 +1388,7 @@ function renderWinbackTrend(){
   });
   Object.values(purchaseDates).forEach(arr => arr.sort((a,b)=>a-b));
 
-  const monthsPresent = MONTH_ORDER.filter(m => RAW.invoices.some(r => r['Month'] === m));
+  const monthsPresent = MONTH_ORDER.filter(m => typeInvoices.some(r => r['Month'] === m));
   const winbackCounts = monthsPresent.map(() => 0);
 
   Object.values(purchaseDates).forEach(dates => {
@@ -1345,12 +1402,17 @@ function renderWinbackTrend(){
     }
   });
 
-  destroy('winbackTrendChart');
-  charts.winbackTrendChart = new Chart(document.getElementById('winbackTrendChart'), {
+  destroy(canvasId);
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
     type:'bar',
     data:{ labels: monthsPresent, datasets:[{ label:'Win-Backs', data:winbackCounts, backgroundColor:'#2f8f5b' }] },
     options:{ responsive:true, plugins:{legend:{display:false}}, scales:{ y:{ ticks:{ precision:0 } } } }
   });
+}
+
+function renderWinbackTrend(){
+  renderWinbackTrendFor('Wholesale', 'winbackTrendChartWholesale');
+  renderWinbackTrendFor('Retail', 'winbackTrendChartRetail');
 }
 
 function renderCallList(){
@@ -1649,6 +1711,8 @@ function resetCanvas(id){
 }
 
 let timingChartsFixed = false;
+let retailSubTabFixed = false;
+let retentionTabFixed = false;
 
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
@@ -1674,6 +1738,39 @@ function switchTab(tab){
       renderDowChart(lastFilteredInvoices);
       renderDomChart(lastFilteredInvoices);
       renderDomCustomerChart(lastFilteredInvoices);
+    });
+  }
+
+  if(tab === 'retention' && !retentionTabFixed && (RAW.invoices.length || RAW.items.length)){
+    retentionTabFixed = true;
+    ['repeatChartWholesale','churnChartWholesale2','cohortChartWholesale','winbackTrendChartWholesale'].forEach(resetCanvas);
+    requestAnimationFrame(() => {
+      renderRepeatSplit();
+      renderChurnChartFor('Wholesale', 'churnChartWholesale2');
+      renderCohortChartFor('Wholesale', 'cohortChartWholesale');
+      renderWinbackTrendFor('Wholesale', 'winbackTrendChartWholesale');
+    });
+  }
+
+  setTimeout(() => {
+    Object.values(charts).forEach(c => { try{ c.resize(); }catch(e){} });
+  }, 50);
+}
+
+function switchRetentionSubTab(type){
+  document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab===type));
+  document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.toggle('active', c.dataset.subtab===type));
+
+  // Same canvas-stuck-at-hidden-size issue as tab switching -- rebuild Retail's
+  // charts fresh the first time that sub-tab is actually shown.
+  if(type === 'retail' && !retailSubTabFixed && (RAW.invoices.length || RAW.items.length)){
+    retailSubTabFixed = true;
+    ['repeatChartRetail','churnChartRetail2','cohortChartRetail','winbackTrendChartRetail'].forEach(resetCanvas);
+    requestAnimationFrame(() => {
+      renderRepeatSplit();
+      renderChurnChartFor('Retail', 'churnChartRetail2');
+      renderCohortChartFor('Retail', 'cohortChartRetail');
+      renderWinbackTrendFor('Retail', 'winbackTrendChartRetail');
     });
   }
 
@@ -1810,14 +1907,16 @@ function renderMixTrendChart(){
   });
 }
 
-let cohortPurchaseData = {}; // phone -> { dates:[...], name, phone, type }
+let cohortPurchaseDataByType = { Wholesale:{}, Retail:{} };
+let cohortContextByType = { Wholesale:{}, Retail:{} }; // { monthsPresent, firstMonth, monthsSeen }
 
-function renderCohortChart(){
+function renderCohortChartFor(saleType, canvasId){
+  const typeInvoices = RAW.invoices.filter(r => cleanSaleType(r['Sale Type']) === saleType);
   const firstMonth = {};
   const monthsSeen = {};
-  cohortPurchaseData = {};
+  const purchaseData = {};
 
-  RAW.invoices.forEach(r => {
+  typeInvoices.forEach(r => {
     const n = normPhone(r['Phone']);
     if(!n) return;
     const m = r['Month'];
@@ -1828,20 +1927,23 @@ function renderCohortChart(){
     if(firstMonth[n]===undefined || idx < MONTH_ORDER.indexOf(firstMonth[n])) firstMonth[n] = m;
 
     const d = parseInvoiceDate(r['Date']);
-    if(!cohortPurchaseData[n]) cohortPurchaseData[n] = { dates:[], name:r['Customer'], phone:r['Phone'], type:cleanSaleType(r['Sale Type']) };
-    if(d) cohortPurchaseData[n].dates.push(d);
+    if(!purchaseData[n]) purchaseData[n] = { dates:[], name:r['Customer'], phone:r['Phone'], type:saleType };
+    if(d) purchaseData[n].dates.push(d);
   });
-  Object.values(cohortPurchaseData).forEach(c => c.dates.sort((a,b)=>a-b));
+  Object.values(purchaseData).forEach(c => c.dates.sort((a,b)=>a-b));
+  cohortPurchaseDataByType[saleType] = purchaseData;
 
   const monthsPresent = MONTH_ORDER.filter(m => Object.values(firstMonth).includes(m));
+  cohortContextByType[saleType] = { monthsPresent, firstMonth, monthsSeen };
+
   const cohortSize = monthsPresent.map(m => Object.keys(firstMonth).filter(n => firstMonth[n]===m).length);
   const retained = monthsPresent.map(m => {
     const cohortNames = Object.keys(firstMonth).filter(n => firstMonth[n]===m);
     return cohortNames.filter(n => monthsSeen[n].size > 1).length;
   });
 
-  destroy('cohortChart');
-  charts.cohortChart = new Chart(document.getElementById('cohortChart'), {
+  destroy(canvasId);
+  charts[canvasId] = new Chart(document.getElementById(canvasId), {
     type:'bar',
     data:{
       labels: monthsPresent,
@@ -1858,25 +1960,32 @@ function renderCohortChart(){
         if(el.datasetIndex !== 1) return; // only "Bought Again Later" is clickable
         const month = monthsPresent[el.index];
         const phones = Object.keys(firstMonth).filter(n => firstMonth[n]===month && monthsSeen[n].size > 1);
-        showCohortDrilldown(month, phones);
+        showCohortDrilldown(month, phones, saleType);
       }
     }
   });
 }
 
-function showCohortDrilldown(month, phones){
+function renderCohortChart(){
+  renderCohortChartFor('Wholesale', 'cohortChartWholesale');
+  renderCohortChartFor('Retail', 'cohortChartRetail');
+}
+
+function showCohortDrilldown(month, phones, saleType){
+  const purchaseData = cohortPurchaseDataByType[saleType] || {};
   const list = phones.map(p => {
-    const c = cohortPurchaseData[p];
+    const c = purchaseData[p];
+    if(!c) return null;
     return {
       name: c.name, phone: c.phone, type: c.type,
       firstPurchase: c.dates[0], lastPurchase: c.dates[c.dates.length-1],
       visits: c.dates.length,
     };
-  });
+  }).filter(Boolean);
   lastCohortList = list;
   cohortSortState = { col:null, dir:0 };
   updateSortIndicators('cohortDrilldownTable', null, 0);
-  document.getElementById('cohortDrilldownTitle').textContent = `Bought again after first purchase in ${month} (${list.length})`;
+  document.getElementById('cohortDrilldownTitle').textContent = `${saleType} \u2014 bought again after first purchase in ${month} (${list.length})`;
   renderCohortDrilldownRows(list);
   document.getElementById('cohortDrilldownPanel').style.display = 'block';
 }
