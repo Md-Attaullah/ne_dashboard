@@ -162,6 +162,15 @@
   .trend-up{color:var(--green);}
   .trend-down{color:var(--red);}
   .trend-flat{color:var(--ink-soft);}
+  .status-badge{
+    display:inline-block; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:600; white-space:nowrap;
+  }
+  .status-active{background:#e5f4ea; color:var(--green);}
+  .status-attention{background:#fdf1e0; color:var(--amber);}
+  .status-highrisk{background:#fbe6e2; color:var(--red);}
+  [data-theme="dark"] .status-active{background:#16321f;}
+  [data-theme="dark"] .status-attention{background:#382a12;}
+  [data-theme="dark"] .status-highrisk{background:#3a1a15;}
 
   @media (max-width:480px){
     .tags-row{grid-template-columns:1fr 1fr; gap:10px;}
@@ -450,18 +459,6 @@
       <div id="mismatchBody"><div class="alert-item">Loading&hellip;</div></div>
       <div class="hint-text">Flags item rows where Qty &times; Rate doesn't match the Amount billed (more than &#8377;2 difference) &mdash; usually a billing typo.</div>
     </div>
-
-    <div class="grid-2b">
-      <div class="panel">
-        <h3>New vs At-Risk &mdash; Wholesale, by Month</h3>
-        <canvas id="churnChartWholesale"></canvas>
-      </div>
-      <div class="panel">
-        <h3>New vs At-Risk &mdash; Retail, by Month</h3>
-        <canvas id="churnChartRetail"></canvas>
-      </div>
-    </div>
-    <div class="hint-text">"At-risk" here means 60+ days since last purchase as of that month's end &mdash; an estimate from invoice history, independent of the Flag column (which uses different thresholds per customer type).</div>
   </div>
 
   <div class="tab-content" data-tab="productmix" id="tab-productmix">
@@ -595,7 +592,7 @@
           </select>
         </div>
         <div class="filter-field">
-          Flag
+          Status
           <select id="filterFlag"><option value="All">All</option></select>
         </div>
         <div class="filter-field">
@@ -618,9 +615,10 @@
           <th data-col="sale" onclick="sortCustomerTable('sale')">Lifetime Sale (&#8377;)</th>
           <th data-col="lastpurchase" onclick="sortCustomerTable('lastpurchase')">Last Purchase</th>
           <th data-col="gap" onclick="sortCustomerTable('gap')">Gap (days)</th>
+          <th data-col="status" onclick="sortCustomerTable('status')">Status</th>
           <th data-col="visits" onclick="sortCustomerTable('visits')">Visits</th>
         </tr></thead>
-        <tbody><tr><td colspan="8" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
+        <tbody><tr><td colspan="9" class="empty-note">Load the ledger to see customers.</td></tr></tbody>
       </table>
       </div>
       <div class="hint-text">Click a customer's name to see their purchase history.</div>
@@ -744,6 +742,19 @@ function cleanPayment(t){
 }
 const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const MARGIN_RATES = { Wholesale: 0.10, Retail: 0.35 };
+
+// Segment-specific retention thresholds (days since last purchase)
+const RETENTION_THRESHOLDS = {
+  Wholesale: { active: 30, attention: 60 }, // <30 Active, <60 Attention, 60+ High Risk
+  Retail:    { active: 60, attention: 90 }, // <60 Active, <90 Attention, 90+ High Risk
+};
+function classifyRetentionStatus(saleType, gapDays){
+  const t = RETENTION_THRESHOLDS[saleType] || RETENTION_THRESHOLDS.Retail;
+  const g = num(gapDays);
+  if(g < t.active) return 'Active';
+  if(g < t.attention) return 'Attention';
+  return 'High Risk';
+}
 
 function parseInvoiceDate(str){
   if(!str) return null;
@@ -892,11 +903,10 @@ function initFilters(){
   const paySel = document.getElementById('filterPayment');
   paySel.innerHTML = '<option value="All">All</option>' + payments.map(p => `<option value="${p}">${p}</option>`).join('');
 
-  // Flags
-  const allCust = [...RAW.wholesale, ...RAW.retail];
-  const flags = [...new Set(allCust.map(r => cleanFlag(r['Flag'])))];
+  // Retention status (computed consistently from Gap days, not the sheet's raw Flag text)
   const flagSel = document.getElementById('filterFlag');
-  flagSel.innerHTML = '<option value="All">All</option>' + flags.map(f => `<option value="${f}">${f}</option>`).join('');
+  flagSel.innerHTML = '<option value="All">All</option>' +
+    ['Active','Attention','High Risk'].map(f => `<option value="${f}">${f}</option>`).join('');
 
   // Date range bounds
   const dates = RAW.invoices.map(r => parseInvoiceDate(r['Date'])).filter(Boolean).sort((a,b)=>a-b);
@@ -1002,14 +1012,14 @@ function applyCustomerFilters(){
   const flag = document.getElementById('filterFlag').value;
   const search = document.getElementById('filterSearch').value.trim().toLowerCase();
 
-  const matches = (r) => {
-    if(flag !== 'All' && cleanFlag(r['Flag']) !== flag) return false;
+  const matches = (r, type) => {
+    if(flag !== 'All' && classifyRetentionStatus(type, r['Gap']) !== flag) return false;
     if(search && !(r['Name']||'').toLowerCase().includes(search)) return false;
     return true;
   };
 
-  const wholesaleForChart = (custType === 'Retail') ? [] : RAW.wholesale.filter(matches);
-  const retailForChart = (custType === 'Wholesale') ? [] : RAW.retail.filter(matches);
+  const wholesaleForChart = (custType === 'Retail') ? [] : RAW.wholesale.filter(r => matches(r, 'Wholesale'));
+  const retailForChart = (custType === 'Wholesale') ? [] : RAW.retail.filter(r => matches(r, 'Retail'));
 
   const visitCounts = {};
   RAW.invoices.forEach(r => {
@@ -1018,8 +1028,8 @@ function applyCustomerFilters(){
   });
 
   let combined = [
-    ...wholesaleForChart.map(r => ({...r, __type:'Wholesale', __visits: visitCounts[normPhone(r['Phone'])] || 0})),
-    ...retailForChart.map(r => ({...r, __type:'Retail', __visits: visitCounts[normPhone(r['Phone'])] || 0})),
+    ...wholesaleForChart.map(r => ({...r, __type:'Wholesale', __visits: visitCounts[normPhone(r['Phone'])] || 0, __status: classifyRetentionStatus('Wholesale', r['Gap'])})),
+    ...retailForChart.map(r => ({...r, __type:'Retail', __visits: visitCounts[normPhone(r['Phone'])] || 0, __status: classifyRetentionStatus('Retail', r['Gap'])})),
   ];
 
   // Default order: highest lifetime sale first. Click a table column header to change it.
@@ -1262,13 +1272,15 @@ function renderTopCustomers(list){
 function renderTopCustomersRows(list){
   const tbody = document.querySelector('#topCustTable tbody');
   if(!list.length){
-    tbody.innerHTML = '<tr><td colspan="8" class="empty-note">No customers match the current filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-note">No customers match the current filters.</td></tr>';
     return;
   }
   const shown = list.slice(0,30);
   tbody.innerHTML = shown.map((r, i) => {
     const nameEsc = (r['Name']||'').replace(/'/g,"\\'");
     const visits = r.__visits || 0;
+    const status = r.__status || classifyRetentionStatus(r.__type, r['Gap']);
+    const statusClass = status === 'Active' ? 'status-active' : status === 'Attention' ? 'status-attention' : status === 'High Risk' ? 'status-highrisk' : '';
     return `
     <tr>
       <td class="num-cell">${i+1}</td>
@@ -1278,10 +1290,11 @@ function renderTopCustomersRows(list){
       <td class="num-cell">${fmtINR(num(r['Sale']))}</td>
       <td>${r['Last Purchase Date'] || r['Last_purchase_date'] || '—'}</td>
       <td class="num-cell">${r['Gap'] || '—'}</td>
+      <td><span class="status-badge ${statusClass}">${status}</span></td>
       <td class="num-cell">${visits}</td>
     </tr>
   `;
-  }).join('') + (list.length > 30 ? `<tr><td colspan="8" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
+  }).join('') + (list.length > 30 ? `<tr><td colspan="9" class="empty-note">+ ${list.length-30} more matching customers (refine filters to narrow down)</td></tr>` : '');
 }
 
 function updateSortIndicators(tableId, activeCol, dir){
@@ -1303,6 +1316,7 @@ const CUSTOMER_SORT_GETTERS = {
     return d ? d.getTime() : 0;
   },
   gap: r => num(r['Gap']),
+  status: r => r.__status || '',
   visits: r => r.__visits || 0,
 };
 
@@ -2086,12 +2100,13 @@ function renderChurnChartFor(saleType, canvasId){
       if(!upToMonth.length) return;
       const last = upToMonth[upToMonth.length - 1];
       const gapDays = Math.round((monthEnd - last) / (1000*60*60*24));
-      if(gapDays > 60) atRisk++;
+      if(classifyRetentionStatus(saleType, gapDays) === 'High Risk') atRisk++;
     });
     newCounts.push(newCount);
     atRiskCounts.push(atRisk);
   });
 
+  const highRiskThreshold = RETENTION_THRESHOLDS[saleType] ? RETENTION_THRESHOLDS[saleType].attention : 90;
   destroy(canvasId);
   charts[canvasId] = new Chart(document.getElementById(canvasId), {
     type:'line',
@@ -2099,7 +2114,7 @@ function renderChurnChartFor(saleType, canvasId){
       labels: monthsPresent,
       datasets:[
         { label:'New Customers', data:newCounts, borderColor:'#2f8f5b', backgroundColor:'rgba(47,143,91,0.12)', tension:0.2, fill:true },
-        { label:'At-Risk (60+ days)', data:atRiskCounts, borderColor:'#c1432f', backgroundColor:'rgba(193,67,47,0.08)', tension:0.2, fill:true },
+        { label:`At-Risk (${highRiskThreshold}+ days)`, data:atRiskCounts, borderColor:'#c1432f', backgroundColor:'rgba(193,67,47,0.08)', tension:0.2, fill:true },
       ]
     },
     options:{ responsive:true, plugins:{legend:{position:'bottom'}}, scales:{ y:{ ticks:{ precision:0 } } } }
@@ -2107,8 +2122,8 @@ function renderChurnChartFor(saleType, canvasId){
 }
 
 function renderChurnAcquisitionTrend(){
-  renderChurnChartFor('Wholesale', 'churnChartWholesale');
-  renderChurnChartFor('Retail', 'churnChartRetail');
+  renderChurnChartFor('Wholesale', 'churnChartWholesale2');
+  renderChurnChartFor('Retail', 'churnChartRetail2');
 }
 
 function parseHour(timeStr){
