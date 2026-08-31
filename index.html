@@ -630,6 +630,9 @@
 
     <div class="panel">
       <h3>Sales by Day of the Month</h3>
+      <div class="mini-tags-row" style="margin-bottom:14px;">
+        <div class="mini-tag"><div class="mini-tag-label">Days With Zero Sales</div><div class="mini-tag-value" id="zeroSalesDaysCount">&mdash;</div></div>
+      </div>
       <div class="dom-scroll"><div class="chart-box dom-canvas-box"><canvas id="domChart"></canvas></div></div>
       <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end). Swipe sideways on mobile to see all days. Click a bar to see that day's invoices.</div>
     </div>
@@ -1514,12 +1517,31 @@ function renderDowChart(invoices){
   });
 }
 
+function daysInMonthFromInvoices(invoices){
+  // If exactly one month is in view, use its real day count (28-31); otherwise fall back to 31.
+  const monthsPresent = [...new Set(invoices.map(r => r['Month']).filter(Boolean))];
+  if(monthsPresent.length === 1){
+    const monthIdx = MONTH_ORDER.indexOf(monthsPresent[0]);
+    let year = new Date().getFullYear();
+    for(const r of invoices){
+      const d = parseInvoiceDate(r['Date']);
+      if(d){ year = d.getFullYear(); break; }
+    }
+    if(monthIdx >= 0) return new Date(year, monthIdx+1, 0).getDate();
+  }
+  return 31;
+}
+
 function renderDomChart(invoices){
   const byDay = Array(31).fill(0);
   invoices.forEach(r => {
     const d = parseInvoiceDate(r['Date']);
     if(d) byDay[d.getDate()-1] += num(r['Paid']);
   });
+  const totalDays = daysInMonthFromInvoices(invoices);
+  const zeroCount = byDay.slice(0, totalDays).filter(v => v === 0).length;
+  const zeroEl = document.getElementById('zeroSalesDaysCount');
+  if(zeroEl) zeroEl.textContent = `${zeroCount} of ${totalDays}`;
   const labels = Array.from({length:31}, (_,i)=>String(i+1));
   destroy('domChart');
   charts.domChart = new Chart(document.getElementById('domChart'), {
