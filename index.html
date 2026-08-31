@@ -416,26 +416,6 @@
       <div class="hint-text">Unique customers per month, split by Sale Type &mdash; based on full invoice history, independent of the filters above. Click any bar to see that month's invoices.</div>
     </div>
 
-    <div class="panel drilldown-panel" id="drilldownPanel">
-      <div class="drilldown-head">
-        <h3 id="drilldownTitle">Invoices for &mdash;</h3>
-        <button class="drilldown-close" onclick="closeDrilldown()">Close &times;</button>
-      </div>
-      <div class="table-wrap">
-        <table id="drilldownTable">
-          <thead><tr>
-            <th>#</th>
-            <th data-col="invoice" onclick="sortInvoiceTable('drilldown','invoice')">Invoice</th>
-            <th data-col="customer" onclick="sortInvoiceTable('drilldown','customer')">Customer</th>
-            <th data-col="date" onclick="sortInvoiceTable('drilldown','date')">Date</th>
-            <th data-col="saletype" onclick="sortInvoiceTable('drilldown','saletype')">Sale Type</th>
-            <th data-col="payment" onclick="sortInvoiceTable('drilldown','payment')">Payment</th>
-            <th data-col="paid" onclick="sortInvoiceTable('drilldown','paid')">Paid (&#8377;)</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
     <div class="hint-text">Tip: click any bar in a monthly chart above to see that month's (and segment's) invoices.</div>
   </div>
 
@@ -651,13 +631,13 @@
     <div class="panel">
       <h3>Sales by Day of the Month</h3>
       <div class="dom-scroll"><div class="chart-box dom-canvas-box"><canvas id="domChart"></canvas></div></div>
-      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end). Swipe sideways on mobile to see all days.</div>
+      <div class="hint-text">Useful for spotting payday-driven spikes (e.g. 1st, 15th, month-end). Swipe sideways on mobile to see all days. Click a bar to see that day's invoices.</div>
     </div>
 
     <div class="panel">
       <h3>Customer Visits by Day of the Month</h3>
       <div class="dom-scroll"><div class="chart-box dom-canvas-box"><canvas id="domCustChart"></canvas></div></div>
-      <div class="hint-text">Counts unique customers (by name) who bought on each calendar day &mdash; not total invoices, so one customer buying twice in a day still counts once.</div>
+      <div class="hint-text">Counts unique customers (by name) who bought on each calendar day &mdash; not total invoices, so one customer buying twice in a day still counts once. Click a bar to see that day's invoices.</div>
     </div>
 
   </div>
@@ -709,6 +689,27 @@
           <tbody><tr><td colspan="7" class="empty-note">Type above to search across all invoices.</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+
+  <div class="panel drilldown-panel" id="drilldownPanel">
+    <div class="drilldown-head">
+      <h3 id="drilldownTitle">Invoices for &mdash;</h3>
+      <button class="drilldown-close" onclick="closeDrilldown()">Close &times;</button>
+    </div>
+    <div class="table-wrap">
+      <table id="drilldownTable">
+        <thead><tr>
+          <th>#</th>
+          <th data-col="invoice" onclick="sortInvoiceTable('drilldown','invoice')">Invoice</th>
+          <th data-col="customer" onclick="sortInvoiceTable('drilldown','customer')">Customer</th>
+          <th data-col="date" onclick="sortInvoiceTable('drilldown','date')">Date</th>
+          <th data-col="saletype" onclick="sortInvoiceTable('drilldown','saletype')">Sale Type</th>
+          <th data-col="payment" onclick="sortInvoiceTable('drilldown','payment')">Payment</th>
+          <th data-col="paid" onclick="sortInvoiceTable('drilldown','paid')">Paid (&#8377;)</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
     </div>
   </div>
 
@@ -1530,6 +1531,15 @@ function renderDomChart(invoices){
       scales:{
         x:{ ticks:{ autoSkip:false, maxRotation:90, minRotation:45, font:{size:9} } },
         y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } }
+      },
+      onClick:(evt, elements) => {
+        if(!elements.length) return;
+        const day = elements[0].index + 1;
+        const invoicesForDay = invoices.filter(r => {
+          const d = parseInvoiceDate(r['Date']);
+          return d && d.getDate() === day;
+        });
+        showDrilldown(`Day ${day}`, invoicesForDay);
       }
     }
   });
@@ -1554,6 +1564,15 @@ function renderDomCustomerChart(invoices){
       scales:{
         x:{ ticks:{ autoSkip:false, maxRotation:90, minRotation:45, font:{size:9} } },
         y:{ ticks:{ precision:0 } }
+      },
+      onClick:(evt, elements) => {
+        if(!elements.length) return;
+        const day = elements[0].index + 1;
+        const invoicesForDay = invoices.filter(r => {
+          const d = parseInvoiceDate(r['Date']);
+          return d && d.getDate() === day;
+        });
+        showDrilldown(`Day ${day} \u2014 Customers`, invoicesForDay);
       }
     }
   });
