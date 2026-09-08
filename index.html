@@ -1349,16 +1349,11 @@ function sortCustomerTable(col){
 
 function renderWinbackFor(saleType){
   const source = saleType === 'Wholesale' ? RAW.wholesale : RAW.retail;
-  const flagged = source
-    .map(r => ({...r, __type:saleType}))
-    .filter(r => {
-      const f = cleanFlag(r['Flag']);
-      return f.includes('High Risk') || f.includes('Attention');
-    });
+  const customers = source.map(r => ({...r, __type:saleType}));
 
   const today = new Date();
   const winbacks = [];
-  flagged.forEach(cust => {
+  customers.forEach(cust => {
     const key = normPhone(cust['Phone']);
     const purchases = RAW.invoices
       .filter(r => normPhone(r['Phone']) === key)
@@ -1370,8 +1365,10 @@ function renderWinbackFor(saleType){
     const previous = purchases[1];
     const daysSince = Math.round((today - mostRecent) / (1000*60*60*24));
     const gapDays = Math.round((mostRecent - previous) / (1000*60*60*24));
+    const priorStatus = classifyRetentionStatus(saleType, gapDays);
+    if(priorStatus === 'Active') return; // wasn't actually at risk before this purchase
     if(daysSince >= 0 && daysSince <= 30){
-      winbacks.push({ name: cust['Name'], type: cust.__type, daysSince, gapDays, flag: cust['Flag'] });
+      winbacks.push({ name: cust['Name'], type: cust.__type, daysSince, gapDays, priorStatus });
     }
   });
 
@@ -1385,7 +1382,7 @@ function renderWinbackFor(saleType){
   }
   body.innerHTML = winbacks.map(w => `
     <div class="alert-item">
-      <b>${w.name}</b> &mdash; was away <b>${w.gapDays}d</b>, came back ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}, was flagged ${w.flag}
+      <b>${w.name}</b> &mdash; was away <b>${w.gapDays}d</b> (${w.priorStatus}), came back ${w.daysSince === 0 ? 'today' : w.daysSince + 'd ago'}
     </div>
   `).join('');
 }
@@ -1436,7 +1433,7 @@ function renderWinbackTrend(){
 function renderCallList(){
   const wholesaleOnly = RAW.wholesale.map(r => ({...r, __type:'Wholesale'}));
   const allNeedsCall = wholesaleOnly
-    .filter(r => { const f = cleanFlag(r['Flag']); return f.includes('High Risk') || f.includes('Attention'); })
+    .filter(r => classifyRetentionStatus('Wholesale', r['Gap']) !== 'Active')
     .sort((a,b) => num(b['Gap']) - num(a['Gap']));
   const needsCall = allNeedsCall.slice(0, 12);
 
@@ -1447,7 +1444,7 @@ function renderCallList(){
   }
   body.innerHTML = needsCall.map(r => `
     <div class="alert-item">
-      <b>${r['Gap']||'?'}d</b> &mdash; ${r['Name']||'Unknown'} (${r.__type}) &mdash; ${r['Flag']||''}
+      <b>${r['Gap']||'?'}d</b> &mdash; ${r['Name']||'Unknown'} (${r.__type}) &mdash; ${classifyRetentionStatus('Wholesale', r['Gap'])}
       ${callButton(r['Phone'])}
       ${waButton(r['Phone'], r['Name'])}
     </div>
@@ -1527,7 +1524,15 @@ function daysInMonthFromInvoices(invoices){
       const d = parseInvoiceDate(r['Date']);
       if(d){ year = d.getFullYear(); break; }
     }
-    if(monthIdx >= 0) return new Date(year, monthIdx+1, 0).getDate();
+    if(monthIdx >= 0){
+      let totalDays = new Date(year, monthIdx+1, 0).getDate();
+      // If this is the CURRENT ongoing month, don't count days that haven't happened yet
+      const today = new Date();
+      if(year === today.getFullYear() && monthIdx === today.getMonth()){
+        totalDays = Math.min(totalDays, today.getDate());
+      }
+      return totalDays;
+    }
   }
   return 31;
 }
