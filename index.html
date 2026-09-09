@@ -438,7 +438,7 @@
     <div class="alert-panel calm" id="aboutToHighRiskPanel">
       <h3>&#9203; About to Become High Risk</h3>
       <div id="aboutToHighRiskBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Wholesale &amp; Retail customers currently in Attention status, within 7 days of crossing into High Risk &mdash; catch them before they slip further, not after.</div>
+      <div class="hint-text">Wholesale customers only, currently in Attention status, within 7 days of crossing into High Risk &mdash; catch them before they slip further, not after.</div>
     </div>
 
     <div class="alert-panel calm" id="slowMoverPanel">
@@ -1479,15 +1479,12 @@ function renderAboutToHighRisk(){
   if(!body) return;
 
   const warningWindow = 7; // days
-  const combined = [
-    ...RAW.wholesale.map(r => ({...r, __type:'Wholesale'})),
-    ...RAW.retail.map(r => ({...r, __type:'Retail'})),
-  ];
+  const wholesaleOnly = RAW.wholesale.map(r => ({...r, __type:'Wholesale'}));
 
-  const candidates = combined
-    .filter(r => classifyRetentionStatus(r.__type, r['Gap']) === 'Attention')
+  const candidates = wholesaleOnly
+    .filter(r => classifyRetentionStatus('Wholesale', r['Gap']) === 'Attention')
     .map(r => {
-      const threshold = (RETENTION_THRESHOLDS[r.__type] || RETENTION_THRESHOLDS.Retail).attention;
+      const threshold = RETENTION_THRESHOLDS.Wholesale.attention;
       return {...r, __daysUntil: threshold - num(r['Gap'])};
     })
     .filter(r => r.__daysUntil >= 0 && r.__daysUntil <= warningWindow)
