@@ -423,10 +423,22 @@
     <div class="section-title"><span class="num">&#9888;</span><h2>Needs Attention</h2></div>
     <div class="hint-text" style="margin-bottom:16px;">Everything worth checking on, gathered from across the dashboard, in one place.</div>
 
+    <div class="alert-panel" id="suddenDropPanel">
+      <h3>&#128201; Sudden Sales Drop Check</h3>
+      <div id="suddenDropBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Compares total sales in the last 7 days vs. the 7 days before that. Flags a drop of 30% or more.</div>
+    </div>
+
     <div class="alert-panel" id="callListPanel">
       <h3>&#128222; Needs a Call Today</h3>
       <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Wholesale customers only, flagged High Risk or Attention Required, sorted by longest gap since last purchase. Independent of the filters on other tabs.</div>
+      <div class="hint-text">Wholesale customers only, currently in Attention or High Risk territory (30+ days since last purchase), sorted by longest gap. Independent of the filters on other tabs.</div>
+    </div>
+
+    <div class="alert-panel calm" id="aboutToHighRiskPanel">
+      <h3>&#9203; About to Become High Risk</h3>
+      <div id="aboutToHighRiskBody"><div class="alert-item">Loading&hellip;</div></div>
+      <div class="hint-text">Wholesale &amp; Retail customers currently in Attention status, within 7 days of crossing into High Risk &mdash; catch them before they slip further, not after.</div>
     </div>
 
     <div class="alert-panel calm" id="slowMoverPanel">
@@ -853,12 +865,13 @@ async function loadAll(){
     applyFilters();
     renderTrends();
     renderCallList();
+    renderSuddenDropAlert();
+    renderAboutToHighRisk();
     renderRepeatSplit();
     renderAvgGap();
     renderCohortChart();
     renderChurnAcquisitionTrend();
     renderMixTrendChart();
-    renderVisitMixChart();
     renderVisitMixChart();
     renderWinback();
     renderWinbackTrend();
@@ -1428,6 +1441,69 @@ function renderWinbackTrendFor(saleType, canvasId){
 function renderWinbackTrend(){
   renderWinbackTrendFor('Wholesale', 'winbackTrendChartWholesale');
   renderWinbackTrendFor('Retail', 'winbackTrendChartRetail');
+}
+
+function renderSuddenDropAlert(){
+  const body = document.getElementById('suddenDropBody');
+  if(!body) return;
+
+  const today = new Date();
+  const last7Start = new Date(today); last7Start.setDate(last7Start.getDate() - 7);
+  const prev7Start = new Date(today); prev7Start.setDate(prev7Start.getDate() - 14);
+  const prev7End = new Date(today); prev7End.setDate(prev7End.getDate() - 7);
+
+  let last7Total = 0, prev7Total = 0;
+  RAW.invoices.forEach(r => {
+    const d = parseInvoiceDate(r['Date']);
+    if(!d) return;
+    if(d > last7Start && d <= today) last7Total += num(r['Paid']);
+    else if(d > prev7Start && d <= prev7End) prev7Total += num(r['Paid']);
+  });
+
+  if(prev7Total <= 0){
+    body.innerHTML = '<div class="alert-item">Not enough prior-week data yet to compare.</div>';
+    return;
+  }
+  const pctChange = ((last7Total - prev7Total) / prev7Total) * 100;
+  if(pctChange <= -30){
+    body.innerHTML = `<div class="alert-item"><b>&#9660; ${Math.abs(pctChange).toFixed(0)}% drop</b> &mdash; last 7 days: ${fmtINR(last7Total)} vs. previous 7 days: ${fmtINR(prev7Total)}.</div>`;
+  } else {
+    const dir = pctChange >= 0 ? 'up' : 'down';
+    const arrow = pctChange >= 0 ? '&#9650;' : '&#9660;';
+    body.innerHTML = `<div class="alert-item">No sudden drop. Last 7 days: ${fmtINR(last7Total)} vs. previous 7 days: ${fmtINR(prev7Total)} (${arrow} ${Math.abs(pctChange).toFixed(0)}%).</div>`;
+  }
+}
+
+function renderAboutToHighRisk(){
+  const body = document.getElementById('aboutToHighRiskBody');
+  if(!body) return;
+
+  const warningWindow = 7; // days
+  const combined = [
+    ...RAW.wholesale.map(r => ({...r, __type:'Wholesale'})),
+    ...RAW.retail.map(r => ({...r, __type:'Retail'})),
+  ];
+
+  const candidates = combined
+    .filter(r => classifyRetentionStatus(r.__type, r['Gap']) === 'Attention')
+    .map(r => {
+      const threshold = (RETENTION_THRESHOLDS[r.__type] || RETENTION_THRESHOLDS.Retail).attention;
+      return {...r, __daysUntil: threshold - num(r['Gap'])};
+    })
+    .filter(r => r.__daysUntil >= 0 && r.__daysUntil <= warningWindow)
+    .sort((a,b) => a.__daysUntil - b.__daysUntil);
+
+  if(!candidates.length){
+    body.innerHTML = '<div class="alert-item">No one is close to crossing into High Risk right now.</div>';
+    return;
+  }
+  body.innerHTML = candidates.map(r => `
+    <div class="alert-item">
+      <b>${r['Name']||'Unknown'}</b> (${r.__type}) &mdash; ${r['Gap']}d gap, crosses into High Risk in ${r.__daysUntil}d
+      ${callButton(r['Phone'])}
+      ${waButton(r['Phone'], r['Name'])}
+    </div>
+  `).join('');
 }
 
 function renderCallList(){
