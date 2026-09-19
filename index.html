@@ -924,7 +924,6 @@ async function loadAll(){
     renderVisitMixChart();
     renderWinback();
     renderWinbackTrend();
-    renderMismatches();
     renderWholesaleTable();
     renderRetailTable();
     initCompareTab();
@@ -1056,7 +1055,6 @@ function applyFilters(){
   renderDomChart(filteredInvoices);
   renderDomCustomerChart(filteredInvoices);
   lastFilteredInvoices = filteredInvoices;
-  renderSlowMovers(filteredItems);
   renderHeatmap(filteredInvoices);
   renderBundles(filteredItems);
   renderDateRange(filteredInvoices);
@@ -2064,8 +2062,8 @@ function switchTab(tab){
 }
 
 function switchRetentionSubTab(type){
-  document.querySelectorAll('.sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab===type));
-  document.querySelectorAll('.sub-tab-content').forEach(c => c.classList.toggle('active', c.dataset.subtab===type));
+  document.querySelectorAll('#tab-retention .sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab===type));
+  document.querySelectorAll('#tab-retention .sub-tab-content').forEach(c => c.classList.toggle('active', c.dataset.subtab===type));
 
   // Same canvas-stuck-at-hidden-size issue as tab switching -- rebuild Retail's
   // charts fresh the first time that sub-tab is actually shown.
@@ -2080,6 +2078,14 @@ function switchRetentionSubTab(type){
     });
   }
 
+  setTimeout(() => {
+    Object.values(charts).forEach(c => { try{ c.resize(); }catch(e){} });
+  }, 50);
+}
+
+function switchAlertsSubTab(type){
+  document.querySelectorAll('#tab-alerts .sub-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.subtab===type));
+  document.querySelectorAll('#tab-alerts .sub-tab-content').forEach(c => c.classList.toggle('active', c.dataset.subtab===type));
   setTimeout(() => {
     Object.values(charts).forEach(c => { try{ c.resize(); }catch(e){} });
   }, 50);
@@ -2490,34 +2496,6 @@ function renderBundles(items){
   }
   body.innerHTML = sorted.map(([pair,count]) => `
     <div class="bundle-item"><span>${pair}</span><span class="bundle-count">${count} invoices</span></div>
-  `).join('');
-}
-
-function renderMismatches(){
-  const mismatches = RAW.items
-    .map(r => {
-      const qty = num(r['Qty']);
-      const rate = num(r['Rate']);
-      const amount = num(r['Amount']);
-      const expected = qty * rate;
-      const diff = amount - expected;
-      return { ...r, expected, diff };
-    })
-    .filter(r => Math.abs(r.diff) > 2)
-    .sort((a,b) => Math.abs(b.diff) - Math.abs(a.diff))
-    .slice(0, 10);
-
-  const body = document.getElementById('mismatchBody');
-  if(!mismatches.length){
-    body.innerHTML = '<div class="alert-item">No mismatches found &mdash; all Qty &times; Rate line items match their billed Amount.</div>';
-    return;
-  }
-  body.innerHTML = mismatches.map(r => `
-    <div class="alert-item">
-      <b>${r['Invoice #'] || r['Invoice'] || '—'}</b> &mdash; ${r['Type']||'Unknown'}:
-      ${num(r['Qty'])} &times; ₹${num(r['Rate'])} = ${fmtINR(r.expected)}, billed ${fmtINR(num(r['Amount']))}
-      (${r.diff > 0 ? '+' : ''}${fmtINR(r.diff)})
-    </div>
   `).join('');
 }
 
