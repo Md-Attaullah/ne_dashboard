@@ -424,35 +424,47 @@
 
   <div class="tab-content" data-tab="alerts" id="tab-alerts">
     <div class="section-title"><span class="num">&#9888;</span><h2>Needs Attention</h2></div>
-    <div class="hint-text" style="margin-bottom:16px;">Everything worth checking on, gathered from across the dashboard, in one place.</div>
+    <div class="hint-text" style="margin-bottom:6px;">Everything worth checking on, split by customer type. Independent of the filters on other tabs.</div>
 
-    <div class="alert-panel" id="suddenDropPanel">
-      <h3>&#128201; Sudden Sales Drop Check</h3>
-      <div id="suddenDropBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Compares total sales in the last 7 days vs. the 7 days before that. Flags a drop of 30% or more.</div>
+    <div class="sub-tab-nav" id="alertsSubNav">
+      <button class="sub-tab-btn active" data-subtab="wholesale" onclick="switchAlertsSubTab('wholesale')">Wholesale</button>
+      <button class="sub-tab-btn" data-subtab="retail" onclick="switchAlertsSubTab('retail')">Retail</button>
     </div>
 
-    <div class="alert-panel" id="callListPanel">
-      <h3>&#128222; Needs a Call Today</h3>
-      <div id="callListBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Wholesale customers only, currently in Attention or High Risk territory (30+ days since last purchase), sorted by longest gap. Independent of the filters on other tabs.</div>
+    <!-- WHOLESALE: full view -->
+    <div class="sub-tab-content active" data-subtab="wholesale" id="alerts-wholesale">
+      <div class="alert-panel" id="suddenDropPanelWholesale">
+        <h3>&#128201; Sudden Sales Drop Check</h3>
+        <div id="suddenDropBodyWholesale"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Wholesale sales in the last 7 days vs. the 7 days before that. Flags a drop of 30% or more.</div>
+      </div>
+
+      <div class="alert-panel" id="callListPanelWholesale">
+        <h3>&#128222; Needs a Call Today</h3>
+        <div id="callListBodyWholesale"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Every wholesale customer in Attention or High Risk territory (30+ days since last purchase), longest gap first.</div>
+      </div>
+
+      <div class="alert-panel calm" id="aboutToHighRiskPanel">
+        <h3>&#9203; About to Become High Risk</h3>
+        <div id="aboutToHighRiskBody"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Wholesale customers in Attention status, within 7 days of crossing into High Risk &mdash; catch them before they slip further, not after.</div>
+      </div>
     </div>
 
-    <div class="alert-panel calm" id="aboutToHighRiskPanel">
-      <h3>&#9203; About to Become High Risk</h3>
-      <div id="aboutToHighRiskBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Wholesale customers only, currently in Attention status, within 7 days of crossing into High Risk &mdash; catch them before they slip further, not after.</div>
-    </div>
+    <!-- RETAIL: limited view -->
+    <div class="sub-tab-content" data-subtab="retail" id="alerts-retail">
+      <div class="alert-panel" id="suddenDropPanelRetail">
+        <h3>&#128201; Sudden Sales Drop Check</h3>
+        <div id="suddenDropBodyRetail"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Retail sales in the last 7 days vs. the 7 days before that. Flags a drop of 30% or more.</div>
+      </div>
 
-    <div class="alert-panel calm" id="slowMoverPanel">
-      <h3>&#128202; Item Trend Watch (vs. previous month)</h3>
-      <div id="slowMoverBody"><div class="alert-item">Loading&hellip;</div></div>
-    </div>
-
-    <div class="alert-panel calm" id="mismatchPanel">
-      <h3>&#129518; Qty &times; Rate Mismatch Check</h3>
-      <div id="mismatchBody"><div class="alert-item">Loading&hellip;</div></div>
-      <div class="hint-text">Flags item rows where Qty &times; Rate doesn't match the Amount billed (more than &#8377;2 difference) &mdash; usually a billing typo.</div>
+      <div class="alert-panel calm" id="callListPanelRetail">
+        <h3>&#128222; Top Retail Customers to Win Back</h3>
+        <div id="callListBodyRetail"><div class="alert-item">Loading&hellip;</div></div>
+        <div class="hint-text">Only the 5 highest-spending retail customers who have gone quiet (60+ days since last purchase).</div>
+      </div>
     </div>
   </div>
 
@@ -1614,8 +1626,8 @@ function renderWinbackTrend(){
   renderWinbackTrendFor('Retail', 'winbackTrendChartRetail');
 }
 
-function renderSuddenDropAlert(){
-  const body = document.getElementById('suddenDropBody');
+function renderSuddenDropFor(saleType){
+  const body = document.getElementById('suddenDropBody' + saleType);
   if(!body) return;
 
   const today = new Date();
@@ -1625,6 +1637,7 @@ function renderSuddenDropAlert(){
 
   let last7Total = 0, prev7Total = 0;
   RAW.invoices.forEach(r => {
+    if(cleanSaleType(r['Sale Type']) !== saleType) return;
     const d = parseInvoiceDate(r['Date']);
     if(!d) return;
     if(d > last7Start && d <= today) last7Total += num(r['Paid']);
@@ -1639,10 +1652,14 @@ function renderSuddenDropAlert(){
   if(pctChange <= -30){
     body.innerHTML = `<div class="alert-item"><b>&#9660; ${Math.abs(pctChange).toFixed(0)}% drop</b> &mdash; last 7 days: ${fmtINR(last7Total)} vs. previous 7 days: ${fmtINR(prev7Total)}.</div>`;
   } else {
-    const dir = pctChange >= 0 ? 'up' : 'down';
     const arrow = pctChange >= 0 ? '&#9650;' : '&#9660;';
     body.innerHTML = `<div class="alert-item">No sudden drop. Last 7 days: ${fmtINR(last7Total)} vs. previous 7 days: ${fmtINR(prev7Total)} (${arrow} ${Math.abs(pctChange).toFixed(0)}%).</div>`;
   }
+}
+
+function renderSuddenDropAlert(){
+  renderSuddenDropFor('Wholesale');
+  renderSuddenDropFor('Retail');
 }
 
 function renderAboutToHighRisk(){
@@ -1667,7 +1684,7 @@ function renderAboutToHighRisk(){
   }
   body.innerHTML = candidates.map(r => `
     <div class="alert-item">
-      <b>${r['Name']||'Unknown'}</b> (${r.__type}) &mdash; ${r['Gap']}d gap, crosses into High Risk in ${r.__daysUntil}d
+      <b>${r['Name']||'Unknown'}</b> &mdash; ${r['Gap']}d gap, crosses into High Risk in ${r.__daysUntil}d
       ${callButton(r['Phone'])}
       ${waButton(r['Phone'], r['Name'])}
     </div>
@@ -1675,68 +1692,46 @@ function renderAboutToHighRisk(){
 }
 
 function renderCallList(){
-  const wholesaleOnly = RAW.wholesale.map(r => ({...r, __type:'Wholesale'}));
-  const allNeedsCall = wholesaleOnly
-    .filter(r => classifyRetentionStatus('Wholesale', r['Gap']) !== 'Active')
-    .sort((a,b) => num(b['Gap']) - num(a['Gap']));
-  const needsCall = allNeedsCall.slice(0, 12);
-
-  const body = document.getElementById('callListBody');
-  if(!needsCall.length){
-    body.innerHTML = '<div class="alert-item">No wholesale customers flagged right now &mdash; retention looks healthy.</div>';
-    return;
+  // WHOLESALE: everyone who needs a call, no cap
+  const wBody = document.getElementById('callListBodyWholesale');
+  if(wBody){
+    const needsCall = RAW.wholesale
+      .filter(r => classifyRetentionStatus('Wholesale', r['Gap']) !== 'Active')
+      .sort((a,b) => num(b['Gap']) - num(a['Gap']));
+    if(!needsCall.length){
+      wBody.innerHTML = '<div class="alert-item">No wholesale customers flagged right now &mdash; retention looks healthy.</div>';
+    } else {
+      const highRisk = needsCall.filter(r => classifyRetentionStatus('Wholesale', r['Gap']) === 'High Risk').length;
+      const summary = `<div class="alert-item"><b>${needsCall.length} to call</b> &mdash; ${highRisk} High Risk, ${needsCall.length - highRisk} Attention</div>`;
+      wBody.innerHTML = summary + needsCall.map(r => `
+        <div class="alert-item">
+          <b>${r['Gap']||'?'}d</b> &mdash; ${r['Name']||'Unknown'} &mdash; ${classifyRetentionStatus('Wholesale', r['Gap'])}
+          ${callButton(r['Phone'])}
+          ${waButton(r['Phone'], r['Name'])}
+        </div>
+      `).join('');
+    }
   }
-  body.innerHTML = needsCall.map(r => `
-    <div class="alert-item">
-      <b>${r['Gap']||'?'}d</b> &mdash; ${r['Name']||'Unknown'} (${r.__type}) &mdash; ${classifyRetentionStatus('Wholesale', r['Gap'])}
-      ${callButton(r['Phone'])}
-      ${waButton(r['Phone'], r['Name'])}
-    </div>
-  `).join('');
-}
 
-function renderSlowMovers(items){
-  const monthsPresent = MONTH_ORDER.filter(m => items.some(r => r['Month'] === m));
-  const body = document.getElementById('slowMoverBody');
-  if(monthsPresent.length < 2){
-    body.innerHTML = '<div class="alert-item">Not enough months of data yet to compare trends.</div>';
-    return;
+  // RETAIL: only the 5 biggest spenders who have gone quiet
+  const rBody = document.getElementById('callListBodyRetail');
+  if(rBody){
+    const lapsed = RAW.retail
+      .filter(r => classifyRetentionStatus('Retail', r['Gap']) !== 'Active')
+      .sort((a,b) => num(b['Sale']) - num(a['Sale']))
+      .slice(0, 5);
+    if(!lapsed.length){
+      rBody.innerHTML = '<div class="alert-item">No retail customers have gone quiet right now.</div>';
+    } else {
+      rBody.innerHTML = lapsed.map(r => `
+        <div class="alert-item">
+          <b>${r['Name']||'Unknown'}</b> &mdash; ${fmtINR(num(r['Sale']))} lifetime, ${r['Gap']||'?'}d since last purchase
+          ${callButton(r['Phone'])}
+          ${waButton(r['Phone'], r['Name'])}
+        </div>
+      `).join('');
+    }
   }
-  const latest = monthsPresent[monthsPresent.length-1];
-  const prev = monthsPresent[monthsPresent.length-2];
-
-  const revByType = (month) => {
-    const map = {};
-    items.filter(r => r['Month']===month).forEach(r => {
-      const t = r['Type'] || 'Unknown';
-      map[t] = (map[t]||0) + num(r['Amount']);
-    });
-    return map;
-  };
-  const latestMap = revByType(latest);
-  const prevMap = revByType(prev);
-
-  const changes = Object.keys(prevMap)
-    .filter(t => prevMap[t] >= 500) // ignore negligible items
-    .map(t => {
-      const latestVal = latestMap[t] || 0;
-      const prevVal = prevMap[t];
-      const pct = ((latestVal - prevVal) / prevVal) * 100;
-      return { type: t, latestVal, prevVal, pct };
-    })
-    .filter(c => c.pct <= -30)
-    .sort((a,b) => a.pct - b.pct)
-    .slice(0, 5);
-
-  if(!changes.length){
-    body.innerHTML = '<div class="alert-item">No item type has dropped significantly since last month.</div>';
-    return;
-  }
-  body.innerHTML = changes.map(c => `
-    <div class="alert-item">
-      <b>${c.type}</b> down ${Math.abs(c.pct).toFixed(0)}% &mdash; ${fmtINR(c.prevVal)} &rarr; ${fmtINR(c.latestVal)} (${prev} &rarr; ${latest})
-    </div>
-  `).join('');
 }
 
 const DOW_LABELS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
